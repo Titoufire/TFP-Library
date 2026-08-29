@@ -5,7 +5,7 @@ Vec2 = pygame.math.Vector2
 
 class Rigid_Body():
     
-    def __init__(self, color: str, pos: tuple, velocity: tuple, vertices: list, edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False):
+    def __init__(self, color: str, pos: tuple, velocity: tuple, vertices: list, edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, lines=None):
         self.color = color
         self.edge_color = edge_color
         if edge_color == None:
@@ -26,7 +26,11 @@ class Rigid_Body():
         self.friction = fric
         self.fixed = fixed
         
-        self.calc_vertices()
+        if fixed:
+            try:
+                self.calc_vertices()
+                self.calc_faces(lines)
+            except: raise ValueError(f"[tfp] Fixed Rigid_Body must receive the 'lines' argument. None was given.\n please fill the 'lines' argument with the list of lines in-world")
     
     def simulate(self, dt, gravity, lines):
         if not self.fixed:
@@ -43,11 +47,12 @@ class Rigid_Body():
         
             #calculate absolute vertices and faces
             self.calc_vertices()
-        self.calc_faces(lines)
+            self.calc_faces(lines)
         
         #collision detection and resolution
         #only collisions with other rigid bodies and lines.
         self.collide_lines(lines)
+        self.collide_rigids() #unset
         
         #second half of movement update
         if not self.fixed:
@@ -55,6 +60,29 @@ class Rigid_Body():
             self.angle += self.ang_vel*0.5 * dt
             
     def collide_lines(self, lines):
+        #collision detection
+        for line in lines:
+            if not line in self.faces:
+                distribution = []
+                for vertice in self.abs_vertices:
+                    distribution.append((vertice.x-line.pos.x)*line.normal.x + (vertice.y-line.pos.y)*line.normal.y)
+                if min(distribution) < 0 and max(distribution) > 0:
+                    #potential collision
+                    positions = ()
+                    for vertice in self.abs_vertices:
+                        position = (vertice.x-line.pos.x)*-line.normal.y + (vertice.y-line.pos.y)*line.normal.x
+                        if 0 <= position <= line.length:
+                            positions.append(vertice)
+                    if positions:
+                        self.handle_line_collision(line, positions=positions)
+                        
+    def handle_line_collision(self, line, positions=None):
+        #collision resolution
+        print("collision")
+        col_friction = self.friction*line.friction
+        col_restitution = self.restitution*line.restitution
+    
+    def collide_rigids(self): #unused
         pass
         
     def calc_vertices(self):

@@ -10,7 +10,7 @@ class Line():
         self.color = color
         self.direction = Vec2(end[0]-start[0], end[1]-start[1])
         self.normal = self.direction.rotate(-90).normalize()
-        self.lenght = self.direction.length()
+        self.length = self.direction.length()
         self.restitution = rest
         self.friction = fric
         

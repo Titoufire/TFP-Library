@@ -31,7 +31,7 @@ class Ball():
         self.collide_balls(balls)
         
         #movement update 2
-        self.pos += self.velocity*0.5
+        self.pos += self.velocity*0.5 * dt
         
     def draw(self, screen):
         self.positions.append((self.pos[0], self.pos[1]))
@@ -53,7 +53,7 @@ class Ball():
                 col_restitution = self.restitution*line.restitution
                 
                 #on line collisions
-                if 0 < col_pos < line.lenght:
+                if 0 < col_pos < line.length:
                     norm_speed = self.velocity.x*line.normal.x + self.velocity.y*line.normal.y
                     tang_speed = self.velocity.x*line.normal.y + self.velocity.y*-line.normal.x
                     if norm_speed <= 0:
@@ -72,7 +72,7 @@ class Ball():
                             collided.append(line)
                             self.velocity.x = -(norm_speed*normal.x)*col_restitution +(tang_speed*normal.y)*(1-col_friction)
                             self.velocity.y = -(norm_speed*normal.y)*col_restitution +(tang_speed*-normal.x)*(1-col_friction)
-                elif col_pos > line.lenght:
+                elif col_pos > line.length:
                     normal = Vec2(self.pos.x-line.end.x, self.pos.y-line.end.y)
                     if normal.length() < self.radius:
                         normal.normalize_ip()

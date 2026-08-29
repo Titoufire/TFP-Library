@@ -14,6 +14,9 @@ WIDTH = 800
 HEIGHT = 600
 TITLE = "Physics test"
 FPS = 30
+VERSION = "Alpha 0"
+
+print("Using Titoufire's Physics Library version", VERSION)
 
 #screen variables
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -24,7 +27,7 @@ physics_frames = 10
 clock = pygame.time.Clock()
 running = True
 bg_color = (40, 160, 120)
-gravity = Vec2(0, 0.5)
+gravity = Vec2(0, 7)
 
 #world import
 lines = []
@@ -42,10 +45,10 @@ lines.append(L4)'''
 
 #entities import
 balls = [
-    Ball('red', (50, 50), (0, 0), rest=.99),
-    Ball('green', (120, 50), (0, 0), rest=.99),
-    Ball('blue', (50, 120), (0, 0), rest=.99),
-    Ball('white', (120, 120), (0, 0), rest=.99)]
+    #Ball('red', (50, 50), (0, 0), rest=.99),
+    #Ball('green', (120, 50), (0, 0), rest=.99),
+    #Ball('blue', (50, 120), (0, 0), rest=.99),
+    Ball('white', (120, 150), (0, 0), rest=.99)]
     
 '''Ball('blue', (50, 50), (0, 0), fric=0.1, rest=0.99),
     Ball('aqua', (100, 50), (0, 0), fric=0.1, rest=0.99),
@@ -85,7 +88,7 @@ while running:
     except: pass
     
     #physics
-    for i in range(physics_frames): #execute multiple physics flames in one video frame to increase precision
+    for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
         #respect order: Rigid_Body, Ball, Spring
         for rigid in rigids:
             rigid.simulate(dt, gravity, lines)
