@@ -15,7 +15,7 @@ class Ball():
         self.friction = fric #0 is no friction, 1 is instant stop
         self.mass = mass #unused
         self.collision_history = [[], [], [], [], [], [], [], [], [], []]  #for position solver when in line
-        self.position_tracker = 0 #number of positions tracked
+        self.position_tracker = 100 #number of positions tracked
         
     def simulate(self, dt, gravity, lines, balls):
         #apply gravity

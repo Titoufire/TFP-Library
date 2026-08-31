@@ -48,7 +48,7 @@ balls = [
     #Ball('red', (50, 50), (0, 0), rest=.99),
     #Ball('green', (120, 50), (0, 0), rest=.99),
     #Ball('blue', (50, 120), (0, 0), rest=.99),
-    Ball('white', (120, 150), (0, 0), rest=.99)]
+    Ball('white', (120, 150), (0, 0), rest=1)]
     
 '''Ball('blue', (50, 50), (0, 0), fric=0.1, rest=0.99),
     Ball('aqua', (100, 50), (0, 0), fric=0.1, rest=0.99),
@@ -64,8 +64,12 @@ springs = []
     Spring('orange', balls[0], balls[3], force=.5, length=100, thickness=4),
     Spring('orange', balls[2], balls[1], force=.5, length=100, thickness=4)'''
     
+rigid_lines = []
+
 rigids = [
-    Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=False)]
+    #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=True, rigid_lines=rigid_lines)
+    Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=False)
+    ]
 
 #game loop
 while running:
@@ -91,10 +95,10 @@ while running:
     for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
         #respect order: Rigid_Body, Ball, Spring
         for rigid in rigids:
-            rigid.simulate(dt, gravity, lines)
+            rigid.simulate(dt, gravity, lines, rigids)
             
         for ball in balls:
-            ball.simulate(dt, gravity, lines, balls)
+            ball.simulate(dt, gravity, lines+rigid_lines, balls)
             
         for spring in springs:
             spring.simulate()
