@@ -5,7 +5,7 @@ Vec2 = pygame.math.Vector2
 
 class Rigid_Body():
     
-    def __init__(self, color: str, pos: tuple, velocity: tuple, vertices: list, edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, rigid_lines=None):
+    def __init__(self, color: str, pos: tuple, velocity: tuple, vertices: list[tuple], edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, rigid_lines=None):
         self.color = color
         self.edge_color = edge_color
         if edge_color == None:
@@ -59,7 +59,9 @@ class Rigid_Body():
             #second half of movement update
             self.pos += self.velocity*0.5 * dt
             self.angle += self.ang_vel*0.5 * dt
-            
+
+    #the following three functions are for collision detection and resolution with lines.
+    #collisions with other rigid bodies are handled by the next three functions. 
     def collide_lines(self, lines):
         #collision detection
         for line in lines:
@@ -81,61 +83,75 @@ class Rigid_Body():
                         
     def resolve_line_collision(self, line, vertices):
         #collision resolution
-        print("collision")
+        print("\nline collision")
         col_friction = self.friction*line.friction
         col_restitution = self.restitution*line.restitution
         depths = []
         for vertice in vertices:
             depths.append((vertice.x-line.pos.x)*line.normal.x + (vertice.y-line.pos.y)*line.normal.y)
-        print(vertices)
-        print(depths)
+        print(f"self.velocity: {self.velocity} / {self.ang_vel}")
+        #print(f"vertices: {vertices}")
+        #print(f"depths: {depths}")
         total_depth = sum(depths)
         try:
             vert1 = {"depth_frac": total_depth/depths[0], "pos": vertices[0], "depth": depths[0], "vel": self.velocity*self.ang_vel*((vertices[0]-self.pos).length()), "r": vertices[0]-self.pos}
             vert2 = {"depth_frac": total_depth/depths[1], "pos": vertices[1], "depth": depths[1], "vel": self.velocity*self.ang_vel*((vertices[1]-self.pos).length()), "r": vertices[1]-self.pos}
         except IndexError: pass
+        res_ang_vel = [0, 0]
+        res_lin_vel = [0, 0]
+        norm_speeds = []
         for i in range(len(vertices)):
             vertice = vertices[i]
             depth = depths[i]
-            #resolve collision
-            '''if not self.fixed:
-                self.pos += line.normal * (depth/total_depth) * -total_depth
-                self.velocity -= line.normal * (self.velocity.x*line.normal.x + self.velocity.y*line.normal.y) * (1+col_restitution)
-                self.velocity -= self.velocity * col_friction
-                #angular velocity resolution
-                r = vertice - self.pos
-                torque = r.cross(line.normal * (self.velocity.x*line.normal.x + self.velocity.y*line.normal.y))
-                moment_of_inertia = 0
-                for vertice in self.abs_vertices:
-                    r = vertice - self.pos
-                    moment_of_inertia += r.length_squared()
-                if moment_of_inertia != 0:
-                    self.ang_vel += torque/moment_of_inertia'''
-        '''#calculate impulse
-        j = -(1+col_restitution) * (vert1["vel"]-vert2["vel"]).dot(line.normal) / ((vert1["r"]*line.normal)**2 /vert1["r"].length_squared())
-        #solve for vert1
-        vert1["vel"] -= j*line.normal*vert1["depth_frac"]
-        vert1["vel"] -= vert1["vel"] * col_friction
-        vert2["vel"] += j*line.normal*vert2["depth_frac"]
-        vert2["vel"] -= vert2["vel"] * col_friction
-        #update rigid body velocity and angular velocity
-        self.velocity = (vert1["vel"]+vert2["vel"])/2'''
-        for i in range(len(vertices)):
-            vertice = vertices[i]
-            depth = depths[i]
+            rel_depth = 2 *depth/total_depth
+            r = vertice - self.pos
             norm_speed = self.velocity.x*line.normal.x + self.velocity.y*line.normal.y
             tang_speed = self.velocity.x*line.normal.y + self.velocity.y*-line.normal.x
-            if norm_speed <= 0:
-                self.velocity.x = -(norm_speed*line.normal.x)*col_restitution +(tang_speed*line.normal.y)*(1-col_friction)
-                self.velocity.y = -(norm_speed*line.normal.y)*col_restitution +(tang_speed*-line.normal.x)*(1-col_friction)
-    
+            #norm_speed = (self.velocity.x+r.x*self.ang_vel)*line.normal.x + (self.velocity.y+r.y*self.ang_vel)*line.normal.y
+            #tang_speed = (self.velocity.x+r.x*self.ang_vel)*line.normal.y + (self.velocity.y+r.y*self.ang_vel)*-line.normal.x
+            norm_speeds.append(norm_speed)
+            if norm_speed < 0:
+                res_vel_x = -(norm_speed*line.normal.x)*col_restitution*rel_depth +(tang_speed*line.normal.y)*(1-col_friction)
+                res_vel_y = -(norm_speed*-line.normal.y)*col_restitution*rel_depth +(tang_speed*line.normal.x)*(1-col_friction)
+                #angular velocity is the part of the resolution that is perpendicular to the vector to the center of mass.
+                #The part that is parallel to the vector to the center of mass is linear velocity.
+                r.normalize_ip()
+                res_lin_vel[i] = r.dot(Vec2(res_vel_x, res_vel_y))*line.normal
+                res_ang_vel[i] = r.dot(Vec2(-res_vel_y, res_vel_x))
+        try:
+            if norm_speeds[0] < 0 and norm_speeds[1] < 0:
+                self.apply_line_collision(res_ang_vel, res_lin_vel)
+        except IndexError: pass
+
+    def apply_line_collision(self, res_ang_vel, res_lin_vel):
+        #applying collision resolution
+        print(f"res_ang_vel: {res_ang_vel}")
+        print(f"res_lin_vel: {res_lin_vel}")
+        added_vel = res_lin_vel[0]
+        try:
+            added_vel += res_lin_vel[1]
+        except: pass
+        #added_vel *= 1.4142
+        added_vel *= 1.2
+        print(f"added_vel: {added_vel}")
+        self.velocity += added_vel#/len(res_lin_vel)
+        self.ang_vel += sum(res_ang_vel)
+        print(f"updated velocity: {self.velocity} / {self.ang_vel}")
+
+    #the following three functions are for collision detection and resolution with other rigid bodies.        
     def collide_rigids(self, rigids): #unused
+        pass
+
+    def resolve_rigid_collision(self, rigid): #unused
+        pass
+
+    def apply_rigid_collision(self, res_ang_vel, res_lin_vel): #unused
         pass
         
     def calc_vertices(self):
         self.abs_vertices.clear()
         for vertice in self.rel_vertices:
-            self.abs_vertices.append(vertice+self.pos)
+            self.abs_vertices.append((Vec2(vertice).rotate(self.angle)+self.pos))
         
     def calc_faces(self, lines):
         #clear old faces

@@ -68,7 +68,7 @@ rigid_lines = []
 
 rigids = [
     #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=True, rigid_lines=rigid_lines)
-    Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=False)
+    Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False)
     ]
 
 #game loop

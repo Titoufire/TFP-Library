@@ -9,6 +9,7 @@ class Line():
         self.end = Vec2(end[0], end[1])
         self.color = color
         self.direction = Vec2(end[0]-start[0], end[1]-start[1])
+        self.norm_dir = self.direction.normalize()
         self.normal = self.direction.rotate(-90).normalize()
         self.length = self.direction.length()
         self.restitution = rest
