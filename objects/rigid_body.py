@@ -5,7 +5,9 @@ Vec2 = pygame.math.Vector2
 
 class Rigid_Body():
     
-    def __init__(self, color: str, pos: tuple, velocity: tuple, vertices: list[tuple], edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, rigid_lines=None):
+    def __init__(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int], vertices: list[tuple[int, int]],
+                 edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, rigid_lines=None):
+        
         self.color = color
         self.edge_color = edge_color
         if edge_color == None:
@@ -34,7 +36,7 @@ class Rigid_Body():
                 self.calc_faces(rigid_lines)
             except: raise ValueError(f"[tfp] Fixed Rigid_Body must receive the 'rigid_lines' argument. None was given.\n please fill the 'rigid_lines' argument with the list of lines in-world")
     
-    def simulate(self, dt, gravity, lines, rigids):
+    def simulate(self, dt: float, gravity: Vec2, rigids: list[Rigid_Body]):
         if not self.fixed:
             #apply gravity
             self.acceleration += gravity
@@ -49,11 +51,11 @@ class Rigid_Body():
         
             #calculate absolute vertices and faces
             self.calc_vertices()
-            self.calc_faces(lines)
+            self.calc_faces(Line.lines)
         
             #collision detection and resolution
             #only collisions with other rigid bodies and lines.
-            self.collide_lines(lines)
+            self.collide_lines(Line.lines)
             self.collide_rigids(rigids) #unset
         
             #second half of movement update
@@ -62,7 +64,7 @@ class Rigid_Body():
 
     #the following three functions are for collision detection and resolution with lines.
     #collisions with other rigid bodies are handled by the next three functions. 
-    def collide_lines(self, lines):
+    def collide_lines(self, lines: list[Line]):
         #collision detection
         for line in lines:
             if not line in self.faces:
@@ -81,7 +83,7 @@ class Rigid_Body():
                     if vertices:
                         self.resolve_line_collision(line, vertices)
                         
-    def resolve_line_collision(self, line, vertices):
+    def resolve_line_collision(self, line: Line, vertices: list[Vec2]):
         #collision resolution
         print("\nline collision")
         col_friction = self.friction*line.friction
@@ -125,7 +127,7 @@ class Rigid_Body():
                 print("abandonned collision")
         except IndexError: print("abandonned collision")
 
-    def apply_line_collision(self, res_ang_vel, res_lin_vel):
+    def apply_line_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]):
         #applying collision resolution
         print(f"res_ang_vel: {res_ang_vel}")
         print(f"res_lin_vel: {res_lin_vel}")
@@ -141,13 +143,13 @@ class Rigid_Body():
         print(f"updated velocity: {self.velocity} / {self.ang_vel}")
 
     #the following three functions are for collision detection and resolution with other rigid bodies.        
-    def collide_rigids(self, rigids): #unused
+    def collide_rigids(self, rigids: list[Rigid_Body]): #unused
         pass
 
-    def resolve_rigid_collision(self, rigid): #unused
+    def resolve_rigid_collision(self, rigid: Rigid_Body): #unused
         pass
 
-    def apply_rigid_collision(self, res_ang_vel, res_lin_vel): #unused
+    def apply_rigid_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]): #unused
         pass
         
     def calc_vertices(self):
@@ -155,7 +157,7 @@ class Rigid_Body():
         for vertice in self.rel_vertices:
             self.abs_vertices.append((Vec2(vertice).rotate(self.angle)+self.pos))
         
-    def calc_faces(self, lines):
+    def calc_faces(self, lines: list[Line]):
         #clear old faces
         for face in self.faces:
             try:
@@ -178,7 +180,7 @@ class Rigid_Body():
         for line in self.faces:
             lines.append(line)
             
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface):
         #draw polygon then draw edges
         pygame.draw.polygon(screen, self.color, self.abs_vertices)
 

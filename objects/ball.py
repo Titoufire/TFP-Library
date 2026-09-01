@@ -1,10 +1,14 @@
 import pygame
+from objects.line import Line
 
 Vec2 = pygame.math.Vector2
 
 class Ball():
-    
-    def __init__(self, color: str, pos: tuple, velocity: tuple, rest=1, fric=0, mass=1, floating=False):
+
+    balls: list[Ball] = []
+    def __init__(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int],
+                 rest=1, fric=0, mass=1, floating=False):
+        
         self.pos = Vec2(pos[0], pos[1])
         self.velocity = Vec2(velocity[0], velocity[1])
         self.acceleration = Vec2(0, 0)
@@ -17,8 +21,10 @@ class Ball():
         self.mass = mass #unused
         self.collision_history = [[], [], [], [], [], [], [], [], [], []]  #for position solver when in line
         self.position_tracker = 100 #number of positions tracked
+
+        Ball.balls.append(self)
         
-    def simulate(self, dt, gravity, lines, balls):
+    def simulate(self, dt: float, gravity: Vec2, lines: list[Line]):
         #apply gravity
         if not self.floating:
             self.acceleration += gravity
@@ -30,12 +36,12 @@ class Ball():
         
         #collision detection and resolution
         self.collide_lines(lines)
-        self.collide_balls(balls)
+        self.collide_balls(Ball.balls)
         
         #movement update 2
         self.pos += self.velocity*0.5 * dt
         
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface):
         self.positions.append((self.pos[0], self.pos[1]))
         pygame.draw.circle(screen, self.color, self.pos, self.radius)
         
@@ -44,8 +50,11 @@ class Ball():
             self.positions.pop(0)
         for pos in self.positions:
             pygame.draw.circle(screen, 'red', pos, 1)
+
+        #velocity tracker
+        pygame.draw.line(screen, self.color, self.pos, self.pos+self.velocity*3, 2)
             
-    def collide_lines(self, lines):
+    def collide_lines(self, lines: list[Line]):
         collided = []
         for line in lines:
             dist = (self.pos.x-line.pos.x)*line.normal.x + (self.pos.y-line.pos.y)*line.normal.y
@@ -101,7 +110,7 @@ class Ball():
                                                 self.pos += line.normal*1
                                                 #print(f"position solver acted on {self.color}")
                             
-    def collide_balls(self, balls):
+    def collide_balls(self, balls: list[Ball]):
         for ball in balls:
             if ball != self:
                 normal = Vec2(self.pos.x-ball.pos.x, self.pos.y-ball.pos.y)
