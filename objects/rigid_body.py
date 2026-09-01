@@ -121,7 +121,9 @@ class Rigid_Body():
         try:
             if norm_speeds[0] < 0 and norm_speeds[1] < 0:
                 self.apply_line_collision(res_ang_vel, res_lin_vel)
-        except IndexError: pass
+            else:
+                print("abandonned collision")
+        except IndexError: print("abandonned collision")
 
     def apply_line_collision(self, res_ang_vel, res_lin_vel):
         #applying collision resolution
@@ -133,7 +135,7 @@ class Rigid_Body():
         except: pass
         #added_vel *= 1.4142
         added_vel *= 1.2
-        print(f"added_vel: {added_vel}")
+        print(f"added_vel: {added_vel} / {sum(res_ang_vel)}")
         self.velocity += added_vel#/len(res_lin_vel)
         self.ang_vel += sum(res_ang_vel)
         print(f"updated velocity: {self.velocity} / {self.ang_vel}")

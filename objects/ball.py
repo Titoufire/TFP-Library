@@ -4,12 +4,13 @@ Vec2 = pygame.math.Vector2
 
 class Ball():
     
-    def __init__(self, color: str, pos: tuple, velocity: tuple, rest=1, fric=0, mass=1):
+    def __init__(self, color: str, pos: tuple, velocity: tuple, rest=1, fric=0, mass=1, floating=False):
         self.pos = Vec2(pos[0], pos[1])
         self.velocity = Vec2(velocity[0], velocity[1])
         self.acceleration = Vec2(0, 0)
         self.radius = 20
         self.color = color
+        self.floating = floating
         self.positions = [] #for position tracker
         self.restitution = rest #0 is no bounce, 1 is perfectly elastic
         self.friction = fric #0 is no friction, 1 is instant stop
@@ -19,7 +20,8 @@ class Ball():
         
     def simulate(self, dt, gravity, lines, balls):
         #apply gravity
-        self.acceleration += gravity
+        if not self.floating:
+            self.acceleration += gravity
         
         #movement update
         self.velocity += self.acceleration * dt

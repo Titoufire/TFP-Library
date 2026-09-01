@@ -3,9 +3,9 @@ from objects.ball import Ball
 
 Vec2 = pygame.math.Vector2
 
-class Spring():  # WARNING    Springs don't work as intended !
+class Spring(): #WARNING: the damping affects the ball's velocities, not the actual spring force
     
-    def __init__(self, color: str, node1: Ball, node2: Ball, length=None, force=1, thickness=None):
+    def __init__(self, color: str, node1: Ball, node2: Ball, length=None, force=0.5, thickness=None, damp=0.5, dz = 0.01):
         self.node1 = node1
         self.node2 = node2
         self.length = length
@@ -17,22 +17,30 @@ class Spring():  # WARNING    Springs don't work as intended !
         self.thickness = thickness
         if thickness == None:
             self.thickness = round(force/2)
+        self.damping = damp
+        self.dead_zone = dz
         
     def simulate(self):
-        '''distX = (self.node1.pos.x + self.node1.velocity.x*self.step) - (self.node2.pos.x + self.node2.velocity.x*self.step)
-        distY = (self.node1.pos.y + self.node1.velocity.y*self.step) - (self.node2.pos.y + self.node2.velocity.y*self.step)
-        distance = Vec2(distX, distY).length()
-        
-        self.node1.pos.x += -distX * (1 - self.length/distance)/2 * self.force/self.step
-        self.node1.pos.y += -distY * (1 - self.length/distance)/2 * self.force/self.step
-        self.node2.pos.x += distX * (1 - self.length/distance)/2 * self.force/self.step
-        self.node2.pos.y += distY * (1 - self.length/distance)/2 * self.force/self.step'''
-        
-        lin_vec = Vec2(self.node2.pos.x-self.node1.pos.x, self.node2.pos.y-self.node1.pos.y)
-        distance_to_correct = lin_vec.length()-self.length
-        lin_vec.normalize_ip()
-        self.node1.pos += lin_vec*self.force*distance_to_correct
-        self.node2.pos -= lin_vec*self.force*distance_to_correct
-        
+        distX = (self.node1.pos.x)-(self.node2.pos.x)
+        distY = (self.node1.pos.y)-(self.node2.pos.y)
+        try:
+            distance = (distX**2 + distY**2)**0.5
+        except OverflowError:
+            raise OverflowError("[tfp] OverflowError: distance calculation overflowed, consider making the spring smaller")
+
+        if not -self.dead_zone < self.length - distance < self.dead_zone:
+            vel1X = -distX * (1-self.length/distance)/2 * self.force
+            vel1Y = -distY * (1-self.length/distance)/2 * self.force
+            vel2X = distX * (1-self.length/distance)/2 * self.force
+            vel2Y = distY * (1-self.length/distance)/2 * self.force
+            self.node1.velocity.x += vel1X
+            self.node1.velocity.y += vel1Y
+            self.node2.velocity.x += vel2X
+            self.node2.velocity.y += vel2Y
+            self.node1.velocity *= 1-self.damping*0.01
+            self.node2.velocity *= 1-self.damping*0.01
+            #self.node1.velocity *= 0.99
+            #self.node2.velocity *= 0.99
+
     def draw(self, screen):
         pygame.draw.line(screen, self.color, self.node1.pos, self.node2.pos, self.thickness)

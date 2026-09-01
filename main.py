@@ -10,11 +10,11 @@ pygame.init()
 Vec2 = pygame.math.Vector2
 
 #system variables
+VERSION = "Alpha 0"
 WIDTH = 800
 HEIGHT = 600
-TITLE = "Physics test"
+TITLE = "TFP library test (" + VERSION + ")"
 FPS = 30
-VERSION = "Alpha 0"
 
 print("Using Titoufire's Physics Library version", VERSION)
 
@@ -28,6 +28,8 @@ clock = pygame.time.Clock()
 running = True
 bg_color = (40, 160, 120)
 gravity = Vec2(0, 7)
+right_click = False
+target_ball = None
 
 #world import
 lines = []
@@ -45,10 +47,10 @@ lines.append(L4)'''
 
 #entities import
 balls = [
-    #Ball('red', (50, 50), (0, 0), rest=.99),
-    #Ball('green', (120, 50), (0, 0), rest=.99),
-    #Ball('blue', (50, 120), (0, 0), rest=.99),
-    Ball('white', (120, 150), (0, 0), rest=1)]
+    Ball('green', (120, 150), (0, 0), rest=1, floating=True),
+    Ball('white', (120, 250), (0, 0), rest=1, floating=True),
+    Ball('red', (200, 150), (0, 0), rest=1, floating=True),
+    Ball('blue', (200, 250), (0, 0), rest=1, floating=True)]
     
 '''Ball('blue', (50, 50), (0, 0), fric=0.1, rest=0.99),
     Ball('aqua', (100, 50), (0, 0), fric=0.1, rest=0.99),
@@ -56,7 +58,14 @@ balls = [
     Ball('chartreuse', (300, 50,), (0, 0), fric=0.1, rest=0.99),
     Ball('white', (500, 0), (0, 0), fric=0.1, rest=0.99)'''
     
-springs = []
+springs = [
+    Spring('orange', balls[0], balls[1], force=.05, length=150, thickness=4),
+    Spring('orange', balls[2], balls[3], force=.05, length=150, thickness=4),
+    Spring('orange', balls[0], balls[2], force=.05, length=150, thickness=4),
+    Spring('orange', balls[3], balls[1], force=.05, length=150, thickness=4),
+    Spring('red', balls[0], balls[3], force=.1, length=200, thickness=4),
+    Spring('red', balls[2], balls[1], force=.1, length=200, thickness=4)
+]
 '''Spring('orange', balls[0], balls[1], force=.5, length=100, thickness=4),
     Spring('orange', balls[2], balls[3], force=.5, length=100, thickness=4),
     Spring('orange', balls[0], balls[2], force=.5, length=100, thickness=4),
@@ -68,7 +77,7 @@ rigid_lines = []
 
 rigids = [
     #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=True, rigid_lines=rigid_lines)
-    Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False)
+    #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False)
     ]
 
 #game loop
@@ -83,13 +92,31 @@ while running:
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                #left click
                 if event.button == 1:
                     red = random.randint(0, 255)
                     green = random.randint(0, 255)
                     blue = random.randint(0, 255)
                     balls.append(Ball((red, green, blue), pygame.mouse.get_pos(), (0, 0), fric=0.1, rest=0.99))
-                    
+
+                #right click
+                elif event.button == 3:
+                    right_click = True
+                    for ball in balls:
+                        if Vec2(pygame.mouse.get_pos()).distance_to(ball.pos) < ball.radius:
+                            target_ball = ball
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 3:
+                    right_click = False
+                    target_ball = None
     except: pass
+
+    if right_click:
+        try:
+            target_ball.velocity = Vec2(0, 0)
+            target_ball.pos = Vec2(pygame.mouse.get_pos())
+        except: pass
     
     #physics
     for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
