@@ -15,7 +15,7 @@ VERSION = "Alpha 0"
 WIDTH = 800
 HEIGHT = 600
 TITLE = "TFP library test (" + VERSION + ")"
-FPS = 30
+FPS = 60
 
 print("Using Titoufire's Physics Library version", VERSION)
 
@@ -44,7 +44,7 @@ lines.append(L4)'''
 left_wall = Line('red', (0, 50), (0, HEIGHT-30), rest=1)
 right_wall = Line('red', (WIDTH-1, HEIGHT-30), (WIDTH-1, 50), rest=1)
 ceiling = Line('red', (WIDTH-1, 50), (0, 50), rest=1)
-floor = Line('red', (10, HEIGHT-30), (WIDTH-20, HEIGHT-30), rest=0.8)
+floor = Line('red', (0, HEIGHT-30), (WIDTH-1, HEIGHT-30), rest=1)
 #lines.append(left_wall)
 #lines.append(right_wall)
 #lines.append(ceiling)
@@ -52,10 +52,10 @@ floor = Line('red', (10, HEIGHT-30), (WIDTH-20, HEIGHT-30), rest=0.8)
 
 #entities import
 balls = [
-    Ball('green', (120, 150), (0, 0), rest=1, floating=False, fric=0.2),
-    Ball('white', (120, 250), (0, 0), rest=1, floating=False, fric=0.2),
-    Ball('red', (200, 150), (0, 0), rest=1, floating=False, fric=0.2),
-    Ball('blue', (200, 250), (0, 0), rest=1, floating=False, fric=0.2)]
+    Ball('green', (120, 150), (0, 0), rest=1, floating=False),
+    Ball('white', (120, 250), (0, 0), rest=1, floating=False),
+    Ball('red', (200, 150), (0, 0), rest=1, floating=False),
+    Ball('blue', (200, 250), (0, 0), rest=1, floating=False)]
 
 '''Ball('blue', (50, 50), (0, 0), fric=0.1, rest=0.99),
     Ball('aqua', (100, 50), (0, 0), fric=0.1, rest=0.99),
@@ -85,11 +85,18 @@ rigids = [
     #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False)
     ]
 
+square = Soft_Body.build_from_preset('square', (500, 300), 'white', rad=5, length=35)
+rectangle = Soft_Body.build_from_preset('rectangle', (600, 300), 'white', rad=5, length=50, width=30)
+triangle = Soft_Body.build_from_preset('triangle', (700, 300), 'white', rad=5, length=50, force=0.7)
+circle = Soft_Body.build_from_preset('circle', (250, 100), 'white', rad=5, length=50)
+
 #game loop
 while running:
     
     #clock and delta time
     dt = clock.tick(FPS)/1000
+    TITLE = "TFP library test (" + VERSION + ")" + " FPS:" + str(round(clock.get_fps(), 1))
+    pygame.display.set_caption(TITLE)
     
     #events
     try:
@@ -107,7 +114,7 @@ while running:
                 #right click
                 elif event.button == 3:
                     right_click = True
-                    for ball in balls:
+                    for ball in Ball.balls:
                         if Vec2(pygame.mouse.get_pos()).distance_to(ball.pos) < ball.radius:
                             target_ball = ball
 
@@ -122,7 +129,7 @@ while running:
             target_ball.velocity = Vec2(0, 0)
             target_ball.pos = Vec2(pygame.mouse.get_pos())
         except: pass
-    
+ 
     #physics
     for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
         #respect order: Rigid_Body, Ball, Spring

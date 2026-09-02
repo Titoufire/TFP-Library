@@ -7,12 +7,12 @@ class Ball():
 
     balls: list[Ball] = []
     def __init__(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int],
-                 rest=1, fric=0, mass=1, floating=False):
+                 rest=1, fric=0, mass=1, floating=False, radius=20):
         
         self.pos = Vec2(pos[0], pos[1])
         self.velocity = Vec2(velocity[0], velocity[1])
         self.acceleration = Vec2(0, 0)
-        self.radius = 20
+        self.radius = radius
         self.color = color
         self.floating = floating
         self.positions = [] #for position tracker
@@ -21,12 +21,13 @@ class Ball():
         self.mass = mass #unused
         self.collision_history = [[], [], [], [], [], [], [], [], [], []]  #for position solver when in line
         self.position_tracker = 100 #number of positions tracked
+        self.apply_gravity = True #if false, gravity will not be applied to this ball
 
         Ball.balls.append(self)
         
     def simulate(self, dt: float, gravity: Vec2, lines: list[Line]):
         #apply gravity
-        if not self.floating:
+        if not self.floating and self.apply_gravity:
             self.acceleration += gravity
         
         #movement update
