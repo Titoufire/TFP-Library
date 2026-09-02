@@ -1,0 +1,2 @@
+#small black cube
+= square 500,300 black 5 length=30

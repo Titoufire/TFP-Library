@@ -20,24 +20,60 @@ class Soft_Body():
             soft_body.edges.append(Spring(color, soft_body.balls[spring[0]], soft_body.balls[spring[1]], thickness=2, force=force))
         return soft_body
 
-    def build_from_balls(balls: list[Ball], springs: list[tuple[int, int]], color: str | pygame.Color):
-        pass
+    def build_from_balls(balls: list[Ball], springs: list[tuple[int, int]], color: str | pygame.Color, force=0.5):
+        soft_body = Soft_Body()
+        for spring in springs:
+            soft_body.edges.append(Spring(color, balls[spring[0]], balls[spring[1]], thickness=2, force=force))
+        return soft_body
 
-    def build_from_file(self, file_path: str): #not ready
+    def build_from_file(file_path: str): #not ready
         file = open(file_path, 'r')
-        for line in file.readlines():
+        objects = []
+        lines = file.readlines()
+        for line in lines:
+            line = line.split("\n")[0]
+            print("line:", line)
+
             if line.startswith('/'):
                 print("new object")
-                pass
+                objects.append(Soft_Body())
+
             elif line.startswith('+'):
                 print("new endpoint")
-                pass
+                args = line.split(" ")[1:]
+                objects[-1].balls.append(Ball())
+
             elif line.startswith('-'):
                 print("new spring")
-                pass
-            elif line.startswith('='):
+                args = line.split(" ")[1:]
+                objects[-1].edges.append(Spring())
+
+            elif line.startswith('='):  #that works
                 print("new object from preset")
-                pass
+                args = line.split(" ")[1:]
+                preset_name = args[0]
+                pos = (float(args[1].split(",")[0]), float(args[1].split(",")[1]))
+                color = args[2]
+                rad = float(args[3])
+                flags = args[4:]
+                length, width, force, definition = 10, 10, 0.5, 8
+                for flag in flags:
+                    flagid = flag.split("=")[0]
+                    flagval = float(flag.split("=")[1])
+                    if flagid == 'length':
+                        length = flagval
+                    elif flagid == 'width':
+                        width = flagval
+                    elif flagid == 'force':
+                        force = flagval
+                    elif flagid == 'definition':
+                        definition = flagval
+                    else:
+                        raise ValueError(f"[tfp], wrong flag argument in soft_Body.load_from_file(). {flagid} was given")
+                objects.append(Soft_Body.build_from_preset(preset_name, pos, color, rad, length=length, width=width,
+                                                           force=force, definition=definition))
+        file.close()
+        return objects
 
     def build_from_preset(preset_name: str, pos: tuple[int, int], color: str | pygame.Color,
                           rad: int, length = 10, width = 10, force=0.5, definition = 8):
@@ -106,8 +142,6 @@ class Soft_Body():
                 #springs.append((i, (i + 3) % definition))
                 if i < definition/2:
                     springs.append((i, (i + round(definition/2)) % definition))
-            print("points:", points)
-            print("springs:", springs)
             Soft_Body.build_from_points(points, springs, color, pos, rad, force=force, fric=0.5)
         else:
             raise ValueError(f"[tfp] ValueError: Invalid preset name for soft body, {preset_name} was given")
