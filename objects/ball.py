@@ -115,6 +115,8 @@ class Ball():
         for ball in balls:
             if ball != self:
                 normal = Vec2(self.pos.x-ball.pos.x, self.pos.y-ball.pos.y)
+                if normal.length() == 0:
+                    continue
                 if normal.length() < self.radius + ball.radius:
                     normal.normalize_ip()
                     self.collided_ball = ball

@@ -31,6 +31,7 @@ bg_color = (40, 160, 120)
 gravity = Vec2(0, 7)
 right_click = False
 target_ball = None
+pause_simulation = False
 
 #world import
 #L1 = Line('yellow', (0, 50), (WIDTH/2, 250))
@@ -65,6 +66,9 @@ Spring('orange', balls[0], balls[2], force=.05, length=150, thickness=4)
 Spring('orange', balls[3], balls[1], force=.05, length=150, thickness=4)
 Spring('red', balls[0], balls[3], force=.1, length=200, thickness=4)
 Spring('red', balls[2], balls[1], force=.1, length=200, thickness=4)'''
+
+#ball1 = Ball('red', (50, 200), (100, 0), rest=0.9, floating=True)
+#ball2 = Ball('red', (550, 200), (0, 0), rest=0.9, floating=True)
     
 rigid_lines = []
 
@@ -99,7 +103,7 @@ while running:
                     red = random.randint(0, 255)
                     green = random.randint(0, 255)
                     blue = random.randint(0, 255)
-                    Ball.balls.append(Ball((red, green, blue), pygame.mouse.get_pos(), (0, 0), fric=0.1, rest=0.99))
+                    Ball((red, green, blue), pygame.mouse.get_pos(), (0, 0), fric=0.1, rest=0.99)
 
                 #right click
                 elif event.button == 3:
@@ -112,25 +116,34 @@ while running:
                 if event.button == 3:
                     right_click = False
                     target_ball = None
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    pause_simulation = True
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    pause_simulation = False
     except: pass
 
+    mouse_rel = pygame.mouse.get_rel()
     if right_click:
         try:
-            target_ball.velocity = Vec2(0, 0)
+            target_ball.velocity = Vec2(mouse_rel)*1.5
             target_ball.pos = Vec2(pygame.mouse.get_pos())
         except: pass
  
     #physics
-    for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
-        #respect order: Rigid_Body, Ball, Spring
-        for rigid in rigids:
-            rigid.simulate(dt, gravity, rigids)
+    if not pause_simulation:
+        for i in range(physics_frames): #execute multiple physics frames in one video frame to increase precision
+            #respect order: Rigid_Body, Ball, Spring
+            for rigid in rigids:
+                rigid.simulate(dt, gravity, rigids)
             
-        for ball in Ball.balls:
-            ball.simulate(dt, gravity, Line.lines+rigid_lines)
+            for ball in Ball.balls:
+                ball.simulate(dt, gravity, Line.lines+rigid_lines)
             
-        for spring in Spring.springs:
-            spring.simulate()
+            for spring in Spring.springs:
+                spring.simulate()
             
     #drawing       
     screen.fill(bg_color)

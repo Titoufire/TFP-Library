@@ -27,26 +27,91 @@ class Soft_Body():
         return soft_body
 
     def build_from_file(file_path: str): #not ready
+        ''' 
+        ----- USAGE -----
+        to create a soft body from a preset:
+        start the line with '=' then add you arguments separated by a single white space. 
+        don't put parenthesies around the coordinates. example:
+        {= square 500,300 black 5 length=30}  (the brackets represent code, do not put them in)
+
+        to create a soft body from scratch:
+        start a line with  '/' to create a new soft body, followed by the center of your soft body,
+        optionally followed by the name of that soft body. example:
+        {/ 100,50 rainbow square}
+
+        to add vertices, start a line with '+' followed by your arguments separated by a single white space. example:
+        {+ red -20,-20 0,0 floating=True radius=10}
+
+        to add springs, start a line with '-' followed by your arguments separated by a single white space.
+        for the first and second node, use the index of the the balls you want to join
+        (index order is the order to added the vertices). example:
+        {+ yellow 0 1 force=0.7}
+        '''
         file = open(file_path, 'r')
         objects = []
         lines = file.readlines()
         for line in lines:
             line = line.split("\n")[0]
-            print("line:", line)
 
             if line.startswith('/'):
                 print("new object")
+                temp_position = line.split(" ")[1]
+                position = (float(temp_position.split(",")[0]), float(temp_position.split(",")[0]))
                 objects.append(Soft_Body())
 
             elif line.startswith('+'):
-                print("new endpoint")
+                print("new vertice")
                 args = line.split(" ")[1:]
-                objects[-1].balls.append(Ball())
+                color = args[0]
+                pos = (float(args[1].split(",")[0]), float(args[1].split(",")[1]))
+                velocity = (float(args[2].split(",")[0]), float(args[2].split(",")[1]))
+                rest, fric, mass, floating, radius = 1, 0, 1, False, 20
+                flags = args[3:]
+                for flag in flags:
+                    flagid = flag.split("=")[0]
+                    flagval = flag.split("=")[1]
+                    if flagid == 'rest':
+                        rest = float(flagval)
+                    elif flagid == 'fric':
+                        fric = float(flagval)
+                    elif flagid == 'mass':
+                        mass == float(flagval)
+                    elif flagid == 'floating':
+                        if flagval == 'True':
+                            floating = True
+                        elif flagid == 'False':
+                            floating = False
+                    elif flagid == 'radius':
+                        radius = float(flagval)
+                    else:
+                        raise ValueError(f"[tfp], wrong flag argument in soft_Body.load_from_file(). {flagid} was given")
+                objects[-1].balls.append(Ball(color, (position[0]+pos[0], position[1]+pos[1]), velocity, rest=rest, fric=fric, mass=mass,
+                                              floating=floating, radius=radius))
 
             elif line.startswith('-'):
                 print("new spring")
                 args = line.split(" ")[1:]
-                objects[-1].edges.append(Spring())
+                color = args[0]
+                node1, node2 = int(args[1]), int(args[2])
+                flags = args[3:]
+                length, force, thickness, damp, dz = None, 0.5, None, 0.3, 0.01
+                for flag in flags:
+                    flagid = flag.split("=")[0]
+                    flagval = float(flag.split("=")[1])
+                    if flagid == 'length':
+                        length = float(flagval)
+                    elif flagid == 'force':
+                        force = float(flagval)
+                    elif flagid == 'thickness':
+                        thickness = int(flagval)
+                    elif flagid == 'damp':
+                        damp = float(flagval)
+                    elif flagid == 'dz':
+                        dz = float(flagval)
+                    else:
+                        raise ValueError(f"[tfp], wrong flag argument in soft_Body.load_from_file(). {flagid} was given")
+                objects[-1].edges.append(Spring(color, objects[-1].balls[node1], objects[-1].balls[node2],
+                                                length=length, force=force, thickness=thickness, damp=damp, dz=dz))
 
             elif line.startswith('='):  #that works
                 print("new object from preset")
@@ -67,7 +132,7 @@ class Soft_Body():
                     elif flagid == 'force':
                         force = flagval
                     elif flagid == 'definition':
-                        definition = flagval
+                        definition = int(flagval)
                     else:
                         raise ValueError(f"[tfp], wrong flag argument in soft_Body.load_from_file(). {flagid} was given")
                 objects.append(Soft_Body.build_from_preset(preset_name, pos, color, rad, length=length, width=width,
