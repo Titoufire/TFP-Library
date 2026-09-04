@@ -50,51 +50,42 @@ context.new_ball('purple', (50, 150), (70, -25))
 #L2 = Line('yellow', (WIDTH/1.5, HEIGHT-20), (WIDTH, 50))
 #L3 = Line('yellow', (0, 250), (WIDTH/3, HEIGHT-30))
 #L4 = Line('yellow', (0, 50), (0, 250))
-'''lines.append(L1)
-lines.append(L2)
-lines.append(L3)
-lines.append(L4)'''
-left_wall = Line('red', (0, 50), (0, HEIGHT-30), rest=1)
-right_wall = Line('red', (WIDTH-1, HEIGHT-30), (WIDTH-1, 50), rest=1)
-ceiling = Line('red', (WIDTH-1, 50), (0, 50), rest=1)
-floor = Line('red', (0, HEIGHT-30), (WIDTH-1, HEIGHT-30), rest=1)
-#lines.append(left_wall)
-#lines.append(right_wall)
-#lines.append(ceiling)
-#lines.append(floor)
-
+left_wall = context.new_line('red', (0, 50), (0, HEIGHT-30), rest=1)
+right_wall = context.new_line('red', (WIDTH-1, HEIGHT-30), (WIDTH-1, 50), rest=1)
+ceiling = context.new_line('red', (WIDTH-1, 50), (0, 50), rest=1)
+floor = context.new_line('red', (0, HEIGHT-30), (WIDTH-1, HEIGHT-30), rest=1)
 #entities import
 
 #big cube !!!
-'''balls = [
-    Ball('green', (120, 150), (0, 0), rest=1, floating=False),
-    Ball('white', (120, 250), (0, 0), rest=1, floating=False),
-    Ball('red', (200, 150), (0, 0), rest=1, floating=False),
-    Ball('blue', (200, 250), (0, 0), rest=1, floating=False)]
+balls = [
+    context.new_ball('green', (120, 150), (0, 0), rest=1, floating=False),
+    context.new_ball('white', (120, 250), (0, 0), rest=1, floating=False),
+    context.new_ball('red', (200, 150), (0, 0), rest=1, floating=False),
+    context.new_ball('blue', (200, 250), (0, 0), rest=1, floating=False)]
 
-Spring('orange', balls[0], balls[1], force=.05, length=150, thickness=4)
-Spring('orange', balls[2], balls[3], force=.05, length=150, thickness=4)
-Spring('orange', balls[0], balls[2], force=.05, length=150, thickness=4)
-Spring('orange', balls[3], balls[1], force=.05, length=150, thickness=4)
-Spring('red', balls[0], balls[3], force=.1, length=200, thickness=4)
-Spring('red', balls[2], balls[1], force=.1, length=200, thickness=4)'''
+context.new_spring('orange', balls[0], balls[1], force=.05, length=150, thickness=4)
+context.new_spring('orange', balls[2], balls[3], force=.05, length=150, thickness=4)
+context.new_spring('orange', balls[0], balls[2], force=.05, length=150, thickness=4)
+context.new_spring('orange', balls[3], balls[1], force=.05, length=150, thickness=4)
+context.new_spring('red', balls[0], balls[3], force=.1, length=200, thickness=4)
+context.new_spring('red', balls[2], balls[1], force=.1, length=200, thickness=4)
 
-#ball1 = Ball('red', (50, 200), (100, 0), rest=0.9, floating=True)
-#ball2 = Ball('red', (550, 200), (0, 0), rest=0.9, floating=True)
+ball1 = context.new_ball('red', (50, 200), (100, 0), rest=0.9, floating=True)
+ball2 = context.new_ball('red', (550, 200), (0, 0), rest=0.9, floating=True)
     
 rigid_lines = []
 
 rigids = [
-    #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=True, rigid_lines=rigid_lines)
-    #Rigid_Body('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False)
+    context.new_rigid('white', (200, 150), (0, 0), [(10, 10), (-10, 10), (0, -10)], fixed=True, rigid_lines=rigid_lines),
+    #context.new_rigid('white', (200, 150), (0, 0), [(10, 10), (-10, 11), (0, -10)], fixed=False) #spawns infinitely IDK why
     ]
 
-#square = Soft_Body.build_from_preset('square', (500, 300), 'white', 5, length=35)
-#rectangle = Soft_Body.build_from_preset('rectangle', (600, 300), 'white', 5, length=50, width=30)
-#triangle = Soft_Body.build_from_preset('triangle', (700, 300), 'white', 5, length=50, force=0.7)
-#circle = Soft_Body.build_from_preset('circle', (250, 100), 'white', 5, length=50)
+square = context.soft_body.build_from_preset('square', (500, 300), 'white', 5, length=35)
+rectangle = context.soft_body.build_from_preset('rectangle', (600, 300), 'white', 5, length=50, width=30)
+triangle = context.soft_body.build_from_preset('triangle', (700, 300), 'white', 5, length=50, force=0.7)
+circle = context.soft_body.build_from_preset('circle', (250, 100), 'white', 5, length=50)
 
-imports = Soft_Body.build_from_file('objects/soft_body_imports.txt')
+imports = context.soft_body.build_from_file('objects/soft_body_imports.txt')
 
 #game loop
 while running:
