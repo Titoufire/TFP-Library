@@ -1,27 +1,33 @@
-import pygame
 import random
+import pygame
 from objects.ball import Ball
 from objects.line import Line
 from objects.spring import Spring
 from objects.rigid_body import Rigid_Body
 from objects.soft_body import Soft_Body
+from camera import Camera
+
+from tfp import Tfp
 
 #initialization
 pygame.init()
 Vec2 = pygame.math.Vector2
 
 #system variables
-VERSION = "Alpha 0"
+VERSION = "TEST"
 WIDTH = 800
 HEIGHT = 600
 TITLE = "TFP library test (" + VERSION + ")"
 FPS = 60
 
-print("Using Titoufire's Physics Library version", VERSION, "\n")
-
 #screen variables
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(TITLE)
+
+test_camera = Camera(Vec2(0, 0), 1)
+
+#initialize tfp context  ### TEST !!!
+context = Tfp(screen, test_camera, physics_frames=10)
 
 #main variables
 physics_frames = 10
@@ -32,6 +38,12 @@ gravity = Vec2(0, 7)
 right_click = False
 target_ball = None
 pause_simulation = False
+
+#tfp context settings ### TEST !!!
+context.set_gravity(full=gravity)
+
+#tfp context imports ### TEST !!!
+context.new_ball('purple', (50, 150), (70, -25))
 
 #world import
 #L1 = Line('yellow', (0, 50), (WIDTH/2, 250))
