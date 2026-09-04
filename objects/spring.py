@@ -1,5 +1,5 @@
 import pygame
-from objects.ball import Ball
+from Tfp.objects.ball import Ball
 
 Vec2 = pygame.math.Vector2
 

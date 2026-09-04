@@ -1,9 +1,9 @@
 import pygame
-from objects.ball import Ball
-from objects.line import Line
-from objects.spring import Spring
-from objects.rigid_body import Rigid_Body
-from objects.soft_body import Soft_Body
+from Tfp.objects.ball import Ball
+from Tfp.objects.line import Line
+from Tfp.objects.spring import Spring
+from Tfp.objects.rigid_body import Rigid_Body
+from Tfp.objects.soft_body import Soft_Body
 
 #initialization
 Vec2 = pygame.math.Vector2
@@ -42,7 +42,6 @@ class Tfp():
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
         screen = self.window
         screen.fill(self.bg_color)
-        pygame.draw.line(screen, 'blue', (0, 49), (self.WIDTH, 49))
             
         for ball in Ball.balls:
             ball.draw(screen)

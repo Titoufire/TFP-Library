@@ -1,7 +1,7 @@
 import pygame
 import math
-from objects.spring import Spring
-from objects.ball import Ball
+from Tfp.objects.spring import Spring
+from Tfp.objects.ball import Ball
 
 Vec2 = pygame.math.Vector2
 
