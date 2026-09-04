@@ -1,5 +1,5 @@
 import pygame
-from objects.line import Line
+from Tfp.objects.line import Line
 
 Vec2 = pygame.math.Vector2
 
