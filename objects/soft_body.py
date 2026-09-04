@@ -54,13 +54,13 @@ class Soft_Body():
             line = line.split("\n")[0]
 
             if line.startswith('/'):
-                print("new object")
+                #new object
                 temp_position = line.split(" ")[1]
                 position = (float(temp_position.split(",")[0]), float(temp_position.split(",")[0]))
                 objects.append(Soft_Body())
 
             elif line.startswith('+'):
-                print("new vertice")
+                #new vertice
                 args = line.split(" ")[1:]
                 color = args[0]
                 pos = (float(args[1].split(",")[0]), float(args[1].split(",")[1]))
@@ -89,7 +89,7 @@ class Soft_Body():
                                               floating=floating, radius=radius))
 
             elif line.startswith('-'):
-                print("new spring")
+                #new spring
                 args = line.split(" ")[1:]
                 color = args[0]
                 node1, node2 = int(args[1]), int(args[2])
@@ -114,7 +114,7 @@ class Soft_Body():
                                                 length=length, force=force, thickness=thickness, damp=damp, dz=dz))
 
             elif line.startswith('='):  #that works
-                print("new object from preset")
+                #new object from preset
                 args = line.split(" ")[1:]
                 preset_name = args[0]
                 pos = (float(args[1].split(",")[0]), float(args[1].split(",")[1]))

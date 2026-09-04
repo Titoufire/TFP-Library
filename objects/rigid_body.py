@@ -173,8 +173,8 @@ class Rigid_Body():
             if None == point[0]:
                 point0 = vertice
             else:
-                self.faces.append(Line(self.edge_color, point[0], point[1]))
-        self.faces.append(Line(self.edge_color, point[1], point0))
+                self.faces.append(Line(self.edge_color, point[0], point[1], dont_self=True))
+        self.faces.append(Line(self.edge_color, point[1], point0, dont_self=True))
         
         #export faces
         for line in self.faces:
