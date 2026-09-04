@@ -5,7 +5,7 @@ Vec2 = pygame.math.Vector2
 class Line():
 
     lines: list[Line] = []
-    def __init__(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0):
+    def __init__(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0, dont_self=False):
         self.pos = Vec2(start[0], start[1])
         self.end = Vec2(end[0], end[1])
         self.color = color
@@ -16,7 +16,8 @@ class Line():
         self.restitution = rest
         self.friction = fric
 
-        Line.lines.append(self)
+        if not dont_self:
+            Line.lines.append(self)
         
     def draw(self, screen: pygame.Surface):
         pygame.draw.line(screen, self.color, self.pos, self.end)
