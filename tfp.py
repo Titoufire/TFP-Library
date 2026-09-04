@@ -6,7 +6,6 @@ from objects.rigid_body import Rigid_Body
 from objects.soft_body import Soft_Body
 
 #initialization
-pygame.init()
 Vec2 = pygame.math.Vector2
 
 class Tfp():
