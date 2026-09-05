@@ -45,5 +45,7 @@ class Spring():
             self.node2.velocity.x += vel2X
             self.node2.velocity.y += vel2Y
 
-    def draw(self, screen: pygame.Surface):
-        pygame.draw.line(screen, self.color, self.node1.pos, self.node2.pos, self.thickness)
+    def draw(self, screen: pygame.Surface, camera):
+        node1_pos: tuple = ((self.node1.pos[0]+camera.pos[0])*camera.zoom, (self.node1.pos[1]+camera.pos[1])*camera.zoom)
+        node2_pos: tuple = ((self.node2.pos[0]+camera.pos[0])*camera.zoom, (self.node2.pos[1]+camera.pos[1])*camera.zoom)
+        pygame.draw.line(screen, self.color, node1_pos, node2_pos, round(self.thickness*camera.zoom))

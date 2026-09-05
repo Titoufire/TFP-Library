@@ -175,13 +175,17 @@ class Rigid_Body():
                 self.faces.append(Line(self.edge_color, point[0], point[1], dont_self=True))
         self.faces.append(Line(self.edge_color, point[1], point0, dont_self=True))
             
-    def draw(self, screen: pygame.Surface):
+    def draw(self, screen: pygame.Surface, camera):
+        screen_vertices = []
+        for vertice in self.abs_vertices:
+            screen_vertices.append(((vertice.x+camera.pos[0])*camera.zoom, (vertice.y+camera.pos[1])*camera.zoom))
         #draw polygon then draw edges
-        pygame.draw.polygon(screen, self.color, self.abs_vertices)
+        pygame.draw.polygon(screen, self.color, screen_vertices)
 
         #position tracker
         self.positions.append((self.pos[0], self.pos[1]))
         if len(self.positions) > self.position_tracker:
             self.positions.pop(0)
         for pos in self.positions:
-            pygame.draw.circle(screen, 'red', pos, 1)
+            track_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
+            pygame.draw.circle(screen, 'red', track_pos, 1)

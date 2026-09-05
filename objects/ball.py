@@ -42,18 +42,22 @@ class Ball():
         #movement update 2
         self.pos += self.velocity*0.5 * dt
         
-    def draw(self, screen: pygame.Surface):
+    def draw(self, screen: pygame.Surface, camera):
         self.positions.append((self.pos[0], self.pos[1]))
-        pygame.draw.circle(screen, self.color, self.pos, self.radius)
+        screen_pos: tuple = ((self.pos[0]+camera.pos[0])*camera.zoom, (self.pos[1]+camera.pos[1])*camera.zoom)
+        pygame.draw.circle(screen, self.color, screen_pos, self.radius*camera.zoom)
         
         #position tracker
         if len(self.positions) > self.position_tracker:
             self.positions.pop(0)
         for pos in self.positions:
-            pygame.draw.circle(screen, 'red', pos, 1)
+            track_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
+            pygame.draw.circle(screen, 'red', track_pos, 1)
 
         #velocity tracker
-        pygame.draw.line(screen, self.color, self.pos, self.pos+self.velocity*3, 2)
+        vel = self.velocity*3*camera.zoom
+        vel_pos = ((screen_pos[0]+vel.x), (screen_pos[1]+vel.y))
+        pygame.draw.line(screen, self.color, screen_pos, vel_pos, 2)
             
     def collide_lines(self, lines: list[Line]):
         collided = []

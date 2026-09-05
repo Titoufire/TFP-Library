@@ -22,5 +22,7 @@ class Line():
         else:
             Line.rigid_lines.append(self)
         
-    def draw(self, screen: pygame.Surface):
-        pygame.draw.line(screen, self.color, self.pos, self.end)
+    def draw(self, screen: pygame.Surface, camera):
+        screen_pos = ((self.pos[0]+camera.pos[0])*camera.zoom, (self.pos[1]+camera.pos[1])*camera.zoom)
+        end_pos = ((self.end[0]+camera.pos[0])*camera.zoom, (self.end[1]+camera.pos[1])*camera.zoom)
+        pygame.draw.line(screen, self.color, screen_pos, end_pos)

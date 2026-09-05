@@ -43,16 +43,16 @@ class Tfp():
         screen.fill(self.bg_color)
             
         for ball in Ball.balls:
-            ball.draw(screen)
+            ball.draw(screen, self.camera)
             
         for line in Line.lines:
-            line.draw(screen)
+            line.draw(screen, self.camera)
                 
         for spring in Spring.springs:
-            spring.draw(screen)
+            spring.draw(screen, self.camera)
                 
         for rigid in self.rigids:
-            rigid.draw(screen)
+            rigid.draw(screen, self.camera)
 
     def simulate(self, dt: float):
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
@@ -110,3 +110,5 @@ class Tfp():
         def __init__(self, pos: Vec2, zoom: float=1.0):
             self.pos = pos
             self.zoom = zoom
+            self.cam_speed = 5
+            self.zoom_speed = 1.01
