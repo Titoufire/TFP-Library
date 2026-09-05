@@ -26,7 +26,7 @@ class Soft_Body():
             soft_body.edges.append(Spring(color, balls[spring[0]], balls[spring[1]], thickness=2, force=force))
         return soft_body
 
-    def build_from_file(file_path: str): #not ready
+    def build_from_file(file_path: str):
         ''' 
         ----- USAGE -----
         to create a soft body from a preset:
@@ -39,7 +39,8 @@ class Soft_Body():
         optionally followed by the name of that soft body. example:
         {/ 100,50 rainbow square}
 
-        to add vertices, start a line with '+' followed by your arguments separated by a single white space. example:
+        to add vertices, start a line with '+' followed by your arguments separated by a single white space.
+        the coordinates are relative to the object's center example:
         {+ red -20,-20 0,0 floating=True radius=10}
 
         to add springs, start a line with '-' followed by your arguments separated by a single white space.
@@ -56,7 +57,7 @@ class Soft_Body():
             if line.startswith('/'):
                 #new object
                 temp_position = line.split(" ")[1]
-                position = (float(temp_position.split(",")[0]), float(temp_position.split(",")[0]))
+                position = (float(temp_position.split(",")[0]), float(temp_position.split(",")[1]))
                 objects.append(Soft_Body())
 
             elif line.startswith('+'):

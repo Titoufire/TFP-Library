@@ -55,7 +55,7 @@ class Tfp():
         for rigid in self.rigids:
             rigid.draw(screen)
 
-    def simulate(self, dt):
+    def simulate(self, dt: float):
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
         self.WIDTH = self.window.width
         self.HEIGHT = self.window.height
@@ -80,7 +80,7 @@ class Tfp():
         if direction:
             self.gravity = direction*self.gravity.length()
 
-    def new_line(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0):
+    def new_line(self, color: str | pygame.Color, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0):
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
         return Line(color=color, start=start, end=end, rest=rest, fric=fric)
 
