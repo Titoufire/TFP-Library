@@ -20,3 +20,6 @@ then tell give Tfp your window, camera, and number of physics frames per visual 
 and you have Tfp setup !
 
 # Functions
+
+# License
+do whatever you want with this, as long as you don't sell a (modified) version of the package. Making games with it and selling them is fine though.
