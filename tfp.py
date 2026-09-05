@@ -25,7 +25,6 @@ class Tfp():
         self.soft_body = Soft_Body
         self.pause_simulation = False
         self.rigids = []
-        self.rigid_lines = []
         self.bg_color = (40, 160, 120)
         self.WIDTH = 0
         self.HEIGHT = 0
@@ -66,7 +65,7 @@ class Tfp():
                     rigid.simulate(dt, self.gravity, self.rigids)
                     
                 for ball in Ball.balls:
-                    ball.simulate(dt, self.gravity, Line.lines+self.rigid_lines)
+                    ball.simulate(dt, self.gravity, Line.lines+Line.rigid_lines)
                     
                 for spring in Spring.springs:
                     spring.simulate()
@@ -100,7 +99,7 @@ class Tfp():
                  edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False):
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
         self.rigids.append(Rigid_Body(color=color, pos=pos, velocity=velocity, vertices=vertices, edge_color=edge_color,
-                          edge_thickness=edge_thickness, fric=fric, rest=rest, fixed=fixed, rigid_lines=self.rigid_lines))
+                          edge_thickness=edge_thickness, fric=fric, rest=rest, fixed=fixed))
         return self.rigids[-1]
 
     def say_hello(self):

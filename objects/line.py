@@ -4,6 +4,7 @@ Vec2 = pygame.math.Vector2
 
 class Line():
 
+    rigid_lines: list[Line] = []
     lines: list[Line] = []
     def __init__(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0, dont_self=False):
         self.pos = Vec2(start[0], start[1])
@@ -18,6 +19,8 @@ class Line():
 
         if not dont_self:
             Line.lines.append(self)
+        else:
+            Line.rigid_lines.append(self)
         
     def draw(self, screen: pygame.Surface):
         pygame.draw.line(screen, self.color, self.pos, self.end)

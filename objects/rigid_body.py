@@ -6,7 +6,7 @@ Vec2 = pygame.math.Vector2
 class Rigid_Body():
     
     def __init__(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int], vertices: list[tuple[int, int]],
-                 edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False, rigid_lines=None):
+                 edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False):
         
         self.color = color
         self.edge_color = edge_color
@@ -31,11 +31,9 @@ class Rigid_Body():
         self.positions = [] #for position tracker
         
         if fixed:
-            try:
-                self.calc_vertices()
-                self.calc_faces(rigid_lines)
-            except: raise ValueError(f"[tfp] Fixed Rigid_Body must receive the 'rigid_lines' argument. None was given.\n please fill the 'rigid_lines' argument with the list of lines in-world")
-    
+            self.calc_vertices()
+            self.calc_faces()
+
     def simulate(self, dt: float, gravity: Vec2, rigids: list[Rigid_Body]):
         if not self.fixed:
             #apply gravity
@@ -51,7 +49,7 @@ class Rigid_Body():
         
             #calculate absolute vertices and faces
             self.calc_vertices()
-            self.calc_faces(Line.lines)
+            self.calc_faces()
         
             #collision detection and resolution
             #only collisions with other rigid bodies and lines.
@@ -157,7 +155,8 @@ class Rigid_Body():
         for vertice in self.rel_vertices:
             self.abs_vertices.append((Vec2(vertice).rotate(self.angle)+self.pos))
         
-    def calc_faces(self, lines: list[Line]):
+    def calc_faces(self):
+        lines = Line.rigid_lines
         #clear old faces
         for face in self.faces:
             try:
@@ -175,10 +174,6 @@ class Rigid_Body():
             else:
                 self.faces.append(Line(self.edge_color, point[0], point[1], dont_self=True))
         self.faces.append(Line(self.edge_color, point[1], point0, dont_self=True))
-        
-        #export faces
-        for line in self.faces:
-            lines.append(line)
             
     def draw(self, screen: pygame.Surface):
         #draw polygon then draw edges
