@@ -11,7 +11,7 @@ Vec2 = pygame.math.Vector2
 class Tfp():
 
     def __init__(self):
-        self.VERSION = "Alpha 0"
+        self.VERSION = "Alpha 1"
         print("Using Titoufire's Physics Library version", self.VERSION, "\n")
         self.has_setup = False
         self.window = None
