@@ -99,15 +99,11 @@ class Rigid_Body():
                         
     def resolve_line_collision(self, line: Line, vertices: list[Vec2]):
         #collision resolution
-        #print("\nline collision")
         col_friction = self.friction*line.friction
         col_restitution = self.restitution*line.restitution
         depths = []
         for vertice in vertices:
             depths.append((vertice.x-line.pos.x)*line.normal.x + (vertice.y-line.pos.y)*line.normal.y)
-        #print(f"self.velocity: {self.velocity} / {self.ang_vel}")
-        #print(f"vertices: {vertices}")
-        #print(f"depths: {depths}")
         total_depth = sum(depths)
         res_ang_vel = [0, 0]
         res_lin_vel = [0, 0]
@@ -134,39 +130,37 @@ class Rigid_Body():
             if norm_speeds[0] < 0 and norm_speeds[1] < 0:
                 self.apply_line_collision(res_ang_vel, res_lin_vel)
             else:
-                #print("abandonned collision")
                 pass
-        except IndexError: pass #print("abandonned collision")
+        except IndexError: pass
 
     def apply_line_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]):
         #applying collision resolution
-        #print(f"res_ang_vel: {res_ang_vel}")
-        #print(f"res_lin_vel: {res_lin_vel}")
         added_vel = res_lin_vel[0]
         try:
             added_vel += res_lin_vel[1]
         except: pass
         #added_vel *= 1.4142
         added_vel *= 1.2
-        #print(f"added_vel: {added_vel} / {sum(res_ang_vel)}")
         self.velocity += added_vel#/len(res_lin_vel)
         self.ang_vel += sum(res_ang_vel)
-        #print(f"updated velocity: {self.velocity} / {self.ang_vel}")
 
     #the following three functions are for collision detection and resolution with other rigid bodies.        
     def collide_rigids(self):
-        self.collision_manifold = (None, None)
+
         # using the separating axis theorem (SAT)
         rigids = Rigid_Body.rigids
         for rigid in rigids:
             if rigid != self:
+                #reset collision_manifold
+                self.collision_manifold = (None, None)
+
                 #iterate for all rigid body pairs
                 all_faces = rigid.faces.copy() + self.faces.copy()
                 abandoned = False
-                normals = []
                 normal_lengths = []
                 edges = []
                 for face in all_faces:
+
                     #do the projection calculations for all faces
                     self_distri = []
                     other_distri = []
@@ -182,35 +176,31 @@ class Rigid_Body():
                     elif other_bounds[1] < self_bounds[0]:
                         abandoned = True
                         break
-                    else: 
-                        penetration = min(
-                            abs(self_bounds[0]-other_bounds[1]),
-                            abs(self_bounds[1]-other_bounds[0])
-                        )
-                        normal_lengths.append(penetration)
-                        normals.append(face.normal)
-                        edges.append(face)
-                #when every projection for every face is calculated
+                    else:
+                        if other_bounds[1] > 0 and self_bounds[0] < 0:
+                            print("line middle: ", self_bounds, other_bounds, face.owner.fixed, face.normal)
+                            penetration = min(
+                                self_bounds[1]-other_bounds[0],
+                                other_bounds[1]-self_bounds[0])
+                            normal_lengths.append(penetration)
+                            edges.append(face)
+
+                #once every projection for every face has been calculated
                 if not abandoned:
                     #if there is collision
+                    Vrel = rigid.velocity - self.velocity
                     self.color = "red"
-                    for i in range(len(normals)):
-                        #calculate shortest penetration: that will be our normal vector for the collision
-                        index = normal_lengths.index(min(normal_lengths))
-                        lowest_normal = normals[index]
-                        edge = edges[index]
-                        Vrel = rigid.velocity - self.velocity
-                        Vnormal = lowest_normal.normalize().dot(Vrel)
-                        if Vnormal <= 0:
-                            #remove vectors we are moving away from
-                            normals.remove(lowest_normal)
-                            edges.remove(edge)
-                            continue
-                        else:
-                            #resolve collisions and exit loop
-                            #THE WRONG EDGE IS GIVEN !!!!
-                            self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
-                            break
+                    #calculate shortest penetration: that will be our normal vector for the collision
+                    #index = normal_lengths.index(min(normal_lengths))
+                    indices = [i for i, x in enumerate(normal_lengths) if x == min(normal_lengths)]
+                    index = indices[0]
+                    lowest_normal = edges[index].normal
+                    edge = edges[index]
+                    Vnormal = lowest_normal.normalize().dot(Vrel)
+                    for i in edges:
+                        print(i.normal, end="")
+                    print("\n")
+                    self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
                 else:
                     #if no collision
                     self.color = "green"
@@ -230,7 +220,8 @@ class Rigid_Body():
         oppositions = []
         for edge in inc_poly.faces:
             oppositions.append(edge.normal.dot(normal))
-        inc_edge = inc_poly.faces[oppositions.index(max(oppositions))]
+        inc_edge = inc_poly.faces[oppositions.index(min(oppositions))]
+        print("inc edge normal:", inc_edge.normal)
 
         #let's calculate the collision manifold (1 or two points considered in collision resolution)
         #first, clip the inc edge, to only consider the points between the end points of the ref edge
@@ -240,7 +231,6 @@ class Rigid_Body():
         start = p.dot(inc_edge.pos-relative)
         end = p.dot(inc_edge.end-relative)
         end_points = (None, None)
-        print(start, end)
         if start >= 0 and end >= 0:
             if start <= ref_edge.length and end <= ref_edge.length:
                 end_points = (inc_edge.pos, inc_edge.end)
@@ -258,7 +248,7 @@ class Rigid_Body():
              raise RuntimeError("something broke")
         print(end_points, "\n")
 
-        #now calculate the cliped point is there is one
+        #now calculate the cliped point(s) is there is any
         if not end_points[1] == None:
             #calculate the clipped point
             pass

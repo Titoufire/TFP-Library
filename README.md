@@ -5,6 +5,12 @@ Titoufire's Physics Library, contains everything needed to build video games wit
 Download the zip file of the latest version, and unzip it in your project folder (same level as your main.py) without creating a folder.  
 Then, simply import it with  
 `from Tfp.tfp import Tfp`   
+
+This library requires pygame has a dependency. You can use pygame or pygame-ce on newer versions of python.
+This library is written for python 3.14.7 therefore using pygame-ce.  
+to install pygame, execute in the terminal:  
+`pip install pygame` or `pip install pygame-ce` in newer versions then import pygame as usual: `import pygame`  
+
 if you are having any issues with this, please open an issue  
 
 # How to use
