@@ -25,7 +25,8 @@ class Ball():
 
         Ball.balls.append(self)
         
-    def simulate(self, dt: float, gravity: Vec2, lines: list[Line]):
+    def simulate(self, dt: float, gravity: Vec2):
+        lines = Line.lines.copy()+Line.rigid_lines.copy()
         #apply gravity
         if not self.floating and self.apply_gravity:
             self.acceleration += gravity

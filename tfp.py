@@ -24,7 +24,6 @@ class Tfp():
         self.rigid_body = Rigid_Body
         self.soft_body = Soft_Body
         self.pause_simulation = False
-        self.rigids = []
         self.bg_color = (40, 160, 120)
         self.WIDTH = 0
         self.HEIGHT = 0
@@ -51,7 +50,7 @@ class Tfp():
         for spring in Spring.springs:
             spring.draw(screen, self.camera)
                 
-        for rigid in self.rigids:
+        for rigid in Rigid_Body.rigids:
             rigid.draw(screen, self.camera)
 
     def simulate(self, dt: float):
@@ -61,11 +60,11 @@ class Tfp():
         if not self.pause_simulation:
             for i in range(self.physics_frames): #execute multiple physics frames in one video frame to increase precision
                 #respect order: Rigid_Body, Ball, Spring
-                for rigid in self.rigids:
-                    rigid.simulate(dt, self.gravity, self.rigids)
+                for rigid in Rigid_Body.rigids:
+                    rigid.simulate(dt, self.gravity)
                     
                 for ball in Ball.balls:
-                    ball.simulate(dt, self.gravity, Line.lines+Line.rigid_lines)
+                    ball.simulate(dt, self.gravity)
                     
                 for spring in Spring.springs:
                     spring.simulate()
@@ -95,12 +94,12 @@ class Tfp():
         return Spring(color=color, node1=node1, node2=node2, length=length,
                  force=force, thickness=thickness, damp=damp, dz = dz)
 
-    def new_rigid(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int], vertices: list[tuple[int, int]],
+    '''def new_rigid(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int], vertices: list[tuple[int, int]],
                  edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False):
         if not self.has_setup: raise("Tfp was not set up yet. please call the setup() function before")
-        self.rigids.append(Rigid_Body(color=color, pos=pos, velocity=velocity, vertices=vertices, edge_color=edge_color,
-                          edge_thickness=edge_thickness, fric=fric, rest=rest, fixed=fixed))
-        return self.rigids[-1]
+        Rigid_Body(color=color, pos=pos, velocity=velocity, vertices=vertices, edge_color=edge_color,
+                          edge_thickness=edge_thickness, fric=fric, rest=rest, fixed=fixed)
+        return Rigid_Body.rigids[-1]'''
 
     def say_hello(self):
         print(f"hello from tfp")

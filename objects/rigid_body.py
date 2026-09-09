@@ -4,37 +4,52 @@ from Tfp.objects.line import Line
 Vec2 = pygame.math.Vector2
 
 class Rigid_Body():
-    
-    def __init__(self, color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int], vertices: list[tuple[int, int]],
-                 edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False):
-        
-        self.color = color
-        self.edge_color = edge_color
-        if edge_color == None:
-            self.edge_color = self.color
-        self.edge_thickness = edge_thickness
-        if len(vertices) < 3:
-            raise ValueError(f"[tfp] Rigid_Body MUST have at least 3 vertices !!! {len(vertices)} were given\n Use Line() instead")
-        self.rel_vertices = vertices
+
+    rigids: list[Rigid_Body] = []
+    def __init__(self):
+
         self.abs_vertices = []
         self.faces = []
-        self.pos = Vec2(pos[0], pos[1])
-        self.velocity = Vec2(velocity[0], velocity[1])
-        self.acceleration = Vec2(0, 0)
-        self.angle = 0
-        self.ang_vel = 0
-        self.ang_acc = 0
-        self.restitution = rest
-        self.friction = fric
-        self.fixed = fixed
-        self.position_tracker = 100 #number of positions tracked
-        self.positions = [] #for position tracker
-        
-        if fixed:
-            self.calc_vertices()
-            self.calc_faces()
 
-    def simulate(self, dt: float, gravity: Vec2, rigids: list[Rigid_Body]):
+        Rigid_Body.rigids.append(self)
+
+    def build_from_points(color: str | pygame.Color, pos: tuple[int, int], velocity: tuple[int, int],
+                          vertices: list[tuple[int, int]], edge_color=None, edge_thickness=1, fric=0, rest=1, fixed=False,
+                          shape="custom", mass=1, height=None, width=None):
+        body = Rigid_Body()
+        body.color = color
+        body.edge_color = edge_color
+        if edge_color == None:
+            body.edge_color = body.color
+        body.edge_thickness = edge_thickness
+        if len(vertices) < 3:
+            raise ValueError(f"[tfp] Rigid_Body MUST have at least 3 vertices !!! {len(vertices)} were given\n Use Line() instead")
+        body.rel_vertices = vertices
+        body.pos = Vec2(pos[0], pos[1])
+        body.velocity = Vec2(velocity[0], velocity[1])
+        body.acceleration = Vec2(0, 0)
+        body.angle, body.ang_vel, body.ang_acc = 0, 0, 0
+        body.restitution = rest
+        body.friction = fric
+        body.fixed = fixed
+        body.position_tracker = 100 #number of positions tracked
+        body.positions = [] #for position tracker
+        body.shape = shape
+        body.mass = mass
+        body.inv_mass = 1/mass
+        body.height = height
+        body.width = width
+        if fixed:
+            body.inv_mass = 0
+        body.collision_manifold = (None, None)
+
+        body.calc_vertices()
+        body.calc_faces()
+        body.calc_inertia()
+
+        return body
+
+    def simulate(self, dt: float, gravity: Vec2):
         if not self.fixed:
             #apply gravity
             self.acceleration += gravity
@@ -53,8 +68,8 @@ class Rigid_Body():
         
             #collision detection and resolution
             #only collisions with other rigid bodies and lines.
-            self.collide_lines(Line.lines)
-            self.collide_rigids(rigids) #unset
+            self.collide_lines()
+            self.collide_rigids() #unset
         
             #second half of movement update
             self.pos += self.velocity*0.5 * dt
@@ -62,7 +77,8 @@ class Rigid_Body():
 
     #the following three functions are for collision detection and resolution with lines.
     #collisions with other rigid bodies are handled by the next three functions. 
-    def collide_lines(self, lines: list[Line]):
+    def collide_lines(self):
+        lines = Line.lines
         #collision detection
         for line in lines:
             if not line in self.faces:
@@ -83,20 +99,16 @@ class Rigid_Body():
                         
     def resolve_line_collision(self, line: Line, vertices: list[Vec2]):
         #collision resolution
-        print("\nline collision")
+        #print("\nline collision")
         col_friction = self.friction*line.friction
         col_restitution = self.restitution*line.restitution
         depths = []
         for vertice in vertices:
             depths.append((vertice.x-line.pos.x)*line.normal.x + (vertice.y-line.pos.y)*line.normal.y)
-        print(f"self.velocity: {self.velocity} / {self.ang_vel}")
+        #print(f"self.velocity: {self.velocity} / {self.ang_vel}")
         #print(f"vertices: {vertices}")
         #print(f"depths: {depths}")
         total_depth = sum(depths)
-        try:
-            vert1 = {"depth_frac": total_depth/depths[0], "pos": vertices[0], "depth": depths[0], "vel": self.velocity*self.ang_vel*((vertices[0]-self.pos).length()), "r": vertices[0]-self.pos}
-            vert2 = {"depth_frac": total_depth/depths[1], "pos": vertices[1], "depth": depths[1], "vel": self.velocity*self.ang_vel*((vertices[1]-self.pos).length()), "r": vertices[1]-self.pos}
-        except IndexError: pass
         res_ang_vel = [0, 0]
         res_lin_vel = [0, 0]
         norm_speeds = []
@@ -122,30 +134,137 @@ class Rigid_Body():
             if norm_speeds[0] < 0 and norm_speeds[1] < 0:
                 self.apply_line_collision(res_ang_vel, res_lin_vel)
             else:
-                print("abandonned collision")
-        except IndexError: print("abandonned collision")
+                #print("abandonned collision")
+                pass
+        except IndexError: pass #print("abandonned collision")
 
     def apply_line_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]):
         #applying collision resolution
-        print(f"res_ang_vel: {res_ang_vel}")
-        print(f"res_lin_vel: {res_lin_vel}")
+        #print(f"res_ang_vel: {res_ang_vel}")
+        #print(f"res_lin_vel: {res_lin_vel}")
         added_vel = res_lin_vel[0]
         try:
             added_vel += res_lin_vel[1]
         except: pass
         #added_vel *= 1.4142
         added_vel *= 1.2
-        print(f"added_vel: {added_vel} / {sum(res_ang_vel)}")
+        #print(f"added_vel: {added_vel} / {sum(res_ang_vel)}")
         self.velocity += added_vel#/len(res_lin_vel)
         self.ang_vel += sum(res_ang_vel)
-        print(f"updated velocity: {self.velocity} / {self.ang_vel}")
+        #print(f"updated velocity: {self.velocity} / {self.ang_vel}")
 
     #the following three functions are for collision detection and resolution with other rigid bodies.        
-    def collide_rigids(self, rigids: list[Rigid_Body]): #unused
-        pass
+    def collide_rigids(self):
+        self.collision_manifold = (None, None)
+        # using the separating axis theorem (SAT)
+        rigids = Rigid_Body.rigids
+        for rigid in rigids:
+            if rigid != self:
+                #iterate for all rigid body pairs
+                all_faces = rigid.faces.copy() + self.faces.copy()
+                abandoned = False
+                normals = []
+                normal_lengths = []
+                edges = []
+                for face in all_faces:
+                    #do the projection calculations for all faces
+                    self_distri = []
+                    other_distri = []
+                    for vertice in self.abs_vertices:
+                        self_distri.append(((vertice.x - face.pos.x)*face.normal.x + (vertice.y - face.pos.y)*face.normal.y))
+                    for vertice in rigid.abs_vertices:
+                        other_distri.append(((vertice.x - face.pos.x)*face.normal.x + (vertice.y - face.pos.y)*face.normal.y))
+                    self_bounds = (min(self_distri), max(self_distri))
+                    other_bounds = (min(other_distri), max(other_distri))
+                    if self_bounds[1] < other_bounds[0]:
+                        abandoned = True
+                        break
+                    elif other_bounds[1] < self_bounds[0]:
+                        abandoned = True
+                        break
+                    else: 
+                        penetration = min(
+                            abs(self_bounds[0]-other_bounds[1]),
+                            abs(self_bounds[1]-other_bounds[0])
+                        )
+                        normal_lengths.append(penetration)
+                        normals.append(face.normal)
+                        edges.append(face)
+                #when every projection for every face is calculated
+                if not abandoned:
+                    #if there is collision
+                    self.color = "red"
+                    for i in range(len(normals)):
+                        #calculate shortest penetration: that will be our normal vector for the collision
+                        index = normal_lengths.index(min(normal_lengths))
+                        lowest_normal = normals[index]
+                        edge = edges[index]
+                        Vrel = rigid.velocity - self.velocity
+                        Vnormal = lowest_normal.normalize().dot(Vrel)
+                        if Vnormal <= 0:
+                            #remove vectors we are moving away from
+                            normals.remove(lowest_normal)
+                            edges.remove(edge)
+                            continue
+                        else:
+                            #resolve collisions and exit loop
+                            #THE WRONG EDGE IS GIVEN !!!!
+                            self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
+                            break
+                else:
+                    #if no collision
+                    self.color = "green"
 
-    def resolve_rigid_collision(self, rigid: Rigid_Body): #unused
-        pass
+    def resolve_rigid_collision(self, rigid: Rigid_Body, normal: Vec2, Vrel: Vec2, Vnormal: float, ref_edge: Line):
+        #It's formula time !
+        print(normal, Vrel, Vnormal)
+
+        #First, let's get the reference polygon and edge, and incident polygon and edge
+        ref_poly = ref_edge.owner
+        if ref_poly == self:
+            inc_poly = rigid
+        else:
+            inc_poly = self
+        print("ref_poly fixed:", ref_poly.fixed)
+        print("ref edge normal:", ref_edge.normal)
+        oppositions = []
+        for edge in inc_poly.faces:
+            oppositions.append(edge.normal.dot(normal))
+        inc_edge = inc_poly.faces[oppositions.index(max(oppositions))]
+
+        #let's calculate the collision manifold (1 or two points considered in collision resolution)
+        #first, clip the inc edge, to only consider the points between the end points of the ref edge
+        #check both inc edge endpoints
+        relative = ref_edge.pos
+        p = Vec2(-normal.y, normal.x) #edge tangent vector
+        start = p.dot(inc_edge.pos-relative)
+        end = p.dot(inc_edge.end-relative)
+        end_points = (None, None)
+        print(start, end)
+        if start >= 0 and end >= 0:
+            if start <= ref_edge.length and end <= ref_edge.length:
+                end_points = (inc_edge.pos, inc_edge.end)
+            elif start <= ref_edge.length and end > ref_edge.length:
+                end_points = (inc_edge.pos, None)
+            elif start > ref_edge.length and end <= ref_edge.length:
+                end_points = (inc_edge.end, None)
+        elif start >= 0 and end < 0:
+            if start <= ref_edge.length:
+                end_points = (inc_edge.pos, None)
+        elif start < 0 and end >= 0:
+            if end <= ref_edge.length:
+                end_points = (inc_edge.end, None)
+        else:
+             raise RuntimeError("something broke")
+        print(end_points, "\n")
+
+        #now calculate the cliped point is there is one
+        if not end_points[1] == None:
+            #calculate the clipped point
+            pass
+
+        #calculate if end points are in the shape (collision manifold)
+        self.collision_manifold = end_points #TEMPORARY !!!
 
     def apply_rigid_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]): #unused
         pass
@@ -172,8 +291,20 @@ class Rigid_Body():
             if None == point[0]:
                 point0 = vertice
             else:
-                self.faces.append(Line(self.edge_color, point[0], point[1], dont_self=True))
-        self.faces.append(Line(self.edge_color, point[1], point0, dont_self=True))
+                self.faces.append(Line(self.edge_color, point[0], point[1], dont_self=True, owner=self))
+        self.faces.append(Line(self.edge_color, point[1], point0, dont_self=True, owner=self))
+
+    def calc_inertia(self):
+        if self.shape == "rectangle":
+            self.inertia = 1/12 * self.mass * (self.height**2 + self.width**2)
+            self.inv_inertia = 1/self.inertia
+        elif self.shape == "custom":
+            # here will be heavy double integral calculation of moment of inertia
+            # r = sqrt(x**2 + y**2)   r**2 = X**2 + Y**2   #distance relative to center of mass
+            # SS-max(r)->max(r) (m/v)*r**2 dxdy
+            # I = 1/12 * ∑k=0/n−1 (Xk*Yk+1 − Xk+1Yk)(xk+1**2 + Xk+1Xk + Xk**2 + Yk+1**2 + Yk+1Yk + Yk**2)
+            # ???
+            pass
             
     def draw(self, screen: pygame.Surface, camera):
         screen_vertices = []
@@ -181,6 +312,9 @@ class Rigid_Body():
             screen_vertices.append(((vertice.x+camera.pos[0])*camera.zoom, (vertice.y+camera.pos[1])*camera.zoom))
         #draw polygon then draw edges
         pygame.draw.polygon(screen, self.color, screen_vertices)
+        for i in range(len(screen_vertices)):
+            pygame.draw.line(screen, self.edge_color, screen_vertices[i], screen_vertices[(i+1)%len(screen_vertices)],
+                             max(round(self.edge_thickness*camera.zoom), 1))
 
         #position tracker
         self.positions.append((self.pos[0], self.pos[1]))
@@ -189,3 +323,13 @@ class Rigid_Body():
         for pos in self.positions:
             track_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
             pygame.draw.circle(screen, 'red', track_pos, 1)
+
+        #collision manifold tracker
+        if self.collision_manifold[0] != None:
+            pos = self.collision_manifold[0]
+            col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
+            pygame.draw.circle(screen, 'yellow', col_pos, 5)
+        if self.collision_manifold[1] != None:
+            pos = self.collision_manifold[1]
+            col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
+            pygame.draw.circle(screen, 'yellow', col_pos, 5)

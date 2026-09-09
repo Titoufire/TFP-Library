@@ -6,7 +6,7 @@ class Line():
 
     rigid_lines: list[Line] = []
     lines: list[Line] = []
-    def __init__(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0, dont_self=False):
+    def __init__(self, color: str, start: tuple[int, int], end: tuple[int, int], rest=1, fric=0, dont_self=False, owner=None):
         self.pos = Vec2(start[0], start[1])
         self.end = Vec2(end[0], end[1])
         self.color = color
@@ -16,6 +16,7 @@ class Line():
         self.length = self.direction.length()
         self.restitution = rest
         self.friction = fric
+        self.owner = owner #for rigid bodies only (collisions)
 
         if not dont_self:
             Line.lines.append(self)
