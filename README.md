@@ -9,8 +9,7 @@ Then, simply import it with
 This library requires pygame has a dependency. You can use pygame or pygame-ce on newer versions of python.
 This library is written for python 3.14.7 therefore using pygame-ce.  
 to install pygame, execute in the terminal:  
-`pip install pygame` or `pip install pygame-ce` in newer versions  
-then import pygame as usual: `import pygame`
+`pip install pygame` or `pip install pygame-ce` in newer versions then import pygame as usual: `import pygame`  
 
 if you are having any issues with this, please open an issue  
 
