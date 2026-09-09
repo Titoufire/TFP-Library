@@ -152,7 +152,7 @@ class Rigid_Body():
         for rigid in rigids:
             if rigid != self:
                 #reset collision_manifold
-                self.collision_manifold = (None, None)
+                self.collision_manifold = [None, None]
 
                 #iterate for all rigid body pairs
                 all_faces = rigid.faces.copy() + self.faces.copy()
@@ -178,7 +178,7 @@ class Rigid_Body():
                         break
                     else:
                         if other_bounds[1] > 0 and self_bounds[0] < 0:
-                            print("line middle: ", self_bounds, other_bounds, face.owner.fixed, face.normal)
+                            #print("line middle: ", self_bounds, other_bounds, face.owner.fixed, face.normal)
                             penetration = min(
                                 self_bounds[1]-other_bounds[0],
                                 other_bounds[1]-self_bounds[0])
@@ -197,9 +197,9 @@ class Rigid_Body():
                     lowest_normal = edges[index].normal
                     edge = edges[index]
                     Vnormal = lowest_normal.normalize().dot(Vrel)
-                    for i in edges:
+                    '''for i in edges:
                         print(i.normal, end="")
-                    print("\n")
+                    print("\n")'''
                     self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
                 else:
                     #if no collision
@@ -216,12 +216,11 @@ class Rigid_Body():
         else:
             inc_poly = self
         print("ref_poly fixed:", ref_poly.fixed)
-        print("ref edge normal:", ref_edge.normal)
         oppositions = []
         for edge in inc_poly.faces:
             oppositions.append(edge.normal.dot(normal))
         inc_edge = inc_poly.faces[oppositions.index(min(oppositions))]
-        print("inc edge normal:", inc_edge.normal)
+        print("ref/inc edge normal:", ref_edge.normal, inc_edge.normal)
 
         #let's calculate the collision manifold (1 or two points considered in collision resolution)
         #first, clip the inc edge, to only consider the points between the end points of the ref edge
@@ -230,31 +229,50 @@ class Rigid_Body():
         p = Vec2(-normal.y, normal.x) #edge tangent vector
         start = p.dot(inc_edge.pos-relative)
         end = p.dot(inc_edge.end-relative)
-        end_points = (None, None)
+        end_points = [None, None]
         if start >= 0 and end >= 0:
             if start <= ref_edge.length and end <= ref_edge.length:
-                end_points = (inc_edge.pos, inc_edge.end)
+                end_points = [inc_edge.end, inc_edge.pos]
             elif start <= ref_edge.length and end > ref_edge.length:
-                end_points = (inc_edge.pos, None)
+                end_points[1] = inc_edge.pos
             elif start > ref_edge.length and end <= ref_edge.length:
-                end_points = (inc_edge.end, None)
+                end_points[0] = inc_edge.end
         elif start >= 0 and end < 0:
             if start <= ref_edge.length:
-                end_points = (inc_edge.pos, None)
+                end_points[1] = inc_edge.pos
         elif start < 0 and end >= 0:
             if end <= ref_edge.length:
-                end_points = (inc_edge.end, None)
+                end_points[0] = inc_edge.end
         else:
              raise RuntimeError("something broke")
-        print(end_points, "\n")
 
         #now calculate the cliped point(s) is there is any
-        if not end_points[1] == None:
+        if end_points[0] == None:
             #calculate the clipped point
-            pass
+            rel_vec: Vec2 = ref_edge.pos - inc_edge.pos
+            ptA = inc_edge.pos + rel_vec.dot(inc_edge.norm_dir)*inc_edge.norm_dir
+            end_points[0] = ptA
+        if end_points[1] == None:
+            #calculate the clipped point
+            rel_vec: Vec2 = ref_edge.end - inc_edge.end
+            ptB = inc_edge.end + rel_vec.dot(inc_edge.norm_dir)*inc_edge.norm_dir
+            end_points[1] = ptB
 
-        #calculate if end points are in the shape (collision manifold)
-        self.collision_manifold = end_points #TEMPORARY !!!
+        #calculate if end points are behind the edge normal and add them to collision manifold
+        if (end_points[0] - ref_edge.pos).dot(normal) < 0:
+            self.collision_manifold[0] = end_points[0]
+            if (end_points[1] - ref_edge.pos).dot(normal) < 0:
+                self.collision_manifold[1] = end_points[1]
+        else:
+            if (end_points[1] - ref_edge.pos).dot(normal) < 0:
+                self.collision_manifold[0] = end_points[1]
+
+        print("")
+        #point = Vec2(coords)
+        #collision manifold now equals: [point, point] or [point, None]
+        if self.collision_manifold[1] == None:
+            self.collision_manifold = [self.collision_manifold[0]]
+        #collision manifold now equals: [points, point] or [point]
 
     def apply_rigid_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]): #unused
         pass
@@ -319,7 +337,9 @@ class Rigid_Body():
             pos = self.collision_manifold[0]
             col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
             pygame.draw.circle(screen, 'yellow', col_pos, 5)
-        if self.collision_manifold[1] != None:
-            pos = self.collision_manifold[1]
-            col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
-            pygame.draw.circle(screen, 'yellow', col_pos, 5)
+        try:
+            if self.collision_manifold[1] != None:
+                pos = self.collision_manifold[1]
+                col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
+                pygame.draw.circle(screen, 'yellow', col_pos, 5)
+        except: pass
