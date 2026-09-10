@@ -197,9 +197,6 @@ class Rigid_Body():
                     lowest_normal = edges[index].normal
                     edge = edges[index]
                     Vnormal = lowest_normal.normalize().dot(Vrel)
-                    '''for i in edges:
-                        print(i.normal, end="")
-                    print("\n")'''
                     self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
                 else:
                     #if no collision
@@ -273,9 +270,44 @@ class Rigid_Body():
         if self.collision_manifold[1] == None:
             self.collision_manifold = [self.collision_manifold[0]]
         #collision manifold now equals: [points, point] or [point]
+        penetrations = []
+        for point in self.collision_manifold:
+            penetrations.append((point - ref_edge.pos).dot(ref_edge.normal))
+        print(penetrations)
+        if penetrations[-1] >= 0:
+            penetrations.pop(-1)
+            self.collision_manifold.pop(-1)
+        if penetrations[0] >= 0:
+            penetrations.pop(0)
+            self.collision_manifold.pop(0)
 
-    def apply_rigid_collision(self, res_ang_vel: list[float], res_lin_vel: list[Vec2]): #unused
-        pass
+        scalar_impulses = []
+        col_rest = ref_poly.restitution + inc_poly.restitution
+        total_penetration = sum(penetrations)
+        print("total penetration", total_penetration)
+        for i in range(len(self.collision_manifold)):
+            point = self.collision_manifold[i]
+            print("considered point:", point)
+            #calculate scalar impulses
+            J = ( -(1+col_rest)*( Vrel.dot(normal) ) ) / ref_poly.inv_mass + inc_poly.inv_mass
+            print("J:", J)
+            scalar_impulses.append(J)
+            #weight scalar impulses with penetration
+            relative_penetration = penetrations[i]/total_penetration
+            print("rel_pen", relative_penetration)
+            J *= relative_penetration
+
+        #add both scalar impulses
+        print(scalar_impulses)
+        scalar_impulse = sum(scalar_impulses)/2
+        self.apply_rigid_collision(scalar_impulse, ref_poly, inc_poly, normal)
+        print("")
+
+    def apply_rigid_collision(self, J: Vec2, ref_poly: Rigid_Body, inc_poly: Rigid_Body, normal: Vec2): #unused
+        ref_vel = ref_poly.velocity - (J*ref_poly.inv_mass) * normal
+        inc_vel = inc_poly.velocity - (J*inc_poly.inv_mass) * normal
+        ref_poly.velocity += ref_vel
+        inc_poly.velocity += inc_vel
         
     def calc_vertices(self):
         self.abs_vertices.clear()
