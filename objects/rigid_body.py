@@ -10,6 +10,10 @@ class Rigid_Body():
 
         self.abs_vertices = []
         self.faces = []
+        '''self.color = self.edge_color = self.edge_thickness = self.rel_vertices = self.pos = self.velocity = None
+        self.acceleration = self.angle = self.ang_vel = self.ang_acc = self.restitution = self.friction = None
+        self.fixed = self.position_tracker = self.positions = self.shape = self.mass = self.inv_mass = None
+        self.height = self.width = self.inertia = self.inv_inertia = self.collision_manifold = self.mass_center = None'''
 
         Rigid_Body.rigids.append(self)
 
@@ -42,6 +46,7 @@ class Rigid_Body():
         if fixed:
             body.inv_mass = 0
         body.collision_manifold = (None, None)
+        body.mass_center = body.pos
 
         body.calc_vertices()
         body.calc_faces()
@@ -69,7 +74,7 @@ class Rigid_Body():
             #collision detection and resolution
             #only collisions with other rigid bodies and lines.
             self.collide_lines()
-            self.collide_rigids() #unset
+            self.collide_rigids()
         
             #second half of movement update
             self.pos += self.velocity*0.5 * dt
@@ -124,8 +129,12 @@ class Rigid_Body():
                 #angular velocity is the part of the resolution that is perpendicular to the vector to the center of mass.
                 #The part that is parallel to the vector to the center of mass is linear velocity.
                 r.normalize_ip()
-                res_lin_vel[i] = r.dot(Vec2(res_vel_x, res_vel_y))*line.normal
-                res_ang_vel[i] = r.dot(Vec2(-res_vel_y, res_vel_x))
+                try:
+                    res_lin_vel[i] = r.dot(Vec2(res_vel_x, res_vel_y))*line.normal
+                    res_ang_vel[i] = r.dot(Vec2(-res_vel_y, res_vel_x))
+                except IndexError:
+                    print(vertices)
+
         try:
             if norm_speeds[0] < 0 and norm_speeds[1] < 0:
                 self.apply_line_collision(res_ang_vel, res_lin_vel)
@@ -197,15 +206,16 @@ class Rigid_Body():
                     lowest_normal = edges[index].normal
                     edge = edges[index]
                     Vnormal = lowest_normal.normalize().dot(Vrel)
-                    self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
+                    if Vnormal <= 0:
+                        self.resolve_rigid_collision(rigid, lowest_normal, Vrel, Vnormal, edge)
+                    else:
+                        print("Abandonned collision. Reason: moving away")
                 else:
                     #if no collision
                     self.color = "green"
 
     def resolve_rigid_collision(self, rigid: Rigid_Body, normal: Vec2, Vrel: Vec2, Vnormal: float, ref_edge: Line):
         #It's formula time !
-        print(normal, Vrel, Vnormal)
-
         #First, let's get the reference polygon and edge, and incident polygon and edge
         ref_poly = ref_edge.owner
         if ref_poly == self:
@@ -217,7 +227,6 @@ class Rigid_Body():
         for edge in inc_poly.faces:
             oppositions.append(edge.normal.dot(normal))
         inc_edge = inc_poly.faces[oppositions.index(min(oppositions))]
-        print("ref/inc edge normal:", ref_edge.normal, inc_edge.normal)
 
         #let's calculate the collision manifold (1 or two points considered in collision resolution)
         #first, clip the inc edge, to only consider the points between the end points of the ref edge
@@ -241,7 +250,7 @@ class Rigid_Body():
             if end <= ref_edge.length:
                 end_points[0] = inc_edge.end
         else:
-             raise RuntimeError("something broke")
+             print("no collision ?")
 
         #now calculate the cliped point(s) is there is any
         if end_points[0] == None:
@@ -256,24 +265,25 @@ class Rigid_Body():
             end_points[1] = ptB
 
         #calculate if end points are behind the edge normal and add them to collision manifold
-        if (end_points[0] - ref_edge.pos).dot(normal) < 0:
+        if (end_points[0] - ref_edge.pos).dot(normal) <= 0:
             self.collision_manifold[0] = end_points[0]
-            if (end_points[1] - ref_edge.pos).dot(normal) < 0:
+            if (end_points[1] - ref_edge.pos).dot(normal) <= 0:
                 self.collision_manifold[1] = end_points[1]
         else:
-            if (end_points[1] - ref_edge.pos).dot(normal) < 0:
+            if (end_points[1] - ref_edge.pos).dot(normal) <= 0:
                 self.collision_manifold[0] = end_points[1]
 
-        print("")
+        print("manifold:", self.collision_manifold)
+
         #point = Vec2(coords)
         #collision manifold now equals: [point, point] or [point, None]
         if self.collision_manifold[1] == None:
             self.collision_manifold = [self.collision_manifold[0]]
+
         #collision manifold now equals: [points, point] or [point]
         penetrations = []
         for point in self.collision_manifold:
             penetrations.append((point - ref_edge.pos).dot(ref_edge.normal))
-        print(penetrations)
         if penetrations[-1] >= 0:
             penetrations.pop(-1)
             self.collision_manifold.pop(-1)
@@ -281,33 +291,75 @@ class Rigid_Body():
             penetrations.pop(0)
             self.collision_manifold.pop(0)
 
+        #reset manifold is both penetration yield 0 (preventing division by zero later)
+        if self.collision_manifold == []:
+            self.collision_manifold = [None, None]
+            return
+
         scalar_impulses = []
         col_rest = ref_poly.restitution + inc_poly.restitution
         total_penetration = sum(penetrations)
-        print("total penetration", total_penetration)
         for i in range(len(self.collision_manifold)):
             point = self.collision_manifold[i]
-            print("considered point:", point)
+            #calculate variables
+            ra = point - ref_poly.mass_center
+            rb = point - inc_poly.mass_center
+            #Vpa = ref_poly.velocity + (-ref_poly.ang_vel * ra.y, ref_poly.ang_vel * ra.x)
+            #Vpb = inc_poly.velocity + (-inc_poly.ang_vel * rb.y, inc_poly.ang_vel * rb.x)
+            Vpa = (ref_poly.velocity+ref_poly.ang_vel*ra)
+            Vpb = (inc_poly.velocity+inc_poly.ang_vel*rb)
+            vrel = Vpb - Vpa
             #calculate scalar impulses
-            J = ( -(1+col_rest)*( Vrel.dot(normal) ) ) / ref_poly.inv_mass + inc_poly.inv_mass
-            print("J:", J)
+            #denominator = (ref_poly.inv_mass + inc_poly.inv_mass +
+                           #((ra*normal)**2)/ref_poly.inertia + ((rb*normal)**2)/inc_poly.inertia)
+            denominator = (ref_poly.inv_mass + inc_poly.inv_mass +
+                            ((ra*normal)**2)*ref_poly.inv_inertia + 
+                            ((rb*normal)**2)*inc_poly.inv_inertia)
+            J = ( -(1+col_rest)*vrel.dot(normal) ) / denominator
             scalar_impulses.append(J)
             #weight scalar impulses with penetration
             relative_penetration = penetrations[i]/total_penetration
-            print("rel_pen", relative_penetration)
             J *= relative_penetration
 
-        #add both scalar impulses
-        print(scalar_impulses)
-        scalar_impulse = sum(scalar_impulses)/2
-        self.apply_rigid_collision(scalar_impulse, ref_poly, inc_poly, normal)
-        print("")
+        #resolve collision
+        print("result impulses", scalar_impulses)
+        self.apply_rigid_collision(scalar_impulses, ref_poly, inc_poly, normal)
 
-    def apply_rigid_collision(self, J: Vec2, ref_poly: Rigid_Body, inc_poly: Rigid_Body, normal: Vec2): #unused
-        ref_vel = ref_poly.velocity - (J*ref_poly.inv_mass) * normal
-        inc_vel = inc_poly.velocity - (J*inc_poly.inv_mass) * normal
-        ref_poly.velocity += ref_vel
-        inc_poly.velocity += inc_vel
+    def apply_rigid_collision(self, scalar_impulse: Vec2, ref_poly: Rigid_Body, inc_poly: Rigid_Body, normal: Vec2):
+        #process both points again
+        print("")
+        ref_vel, inc_vel, ref_ang_vel, inc_ang_vel = [Vec2(0, 0), Vec2(0, 0)], [Vec2(0, 0), Vec2(0, 0)], [0, 0], [0, 0]
+        for i in range(len(self.collision_manifold)):
+            point = self.collision_manifold[i]
+            print("considered point is:", point)
+            J = scalar_impulse[i]
+            ra = point - ref_poly.mass_center
+            rb = point - inc_poly.mass_center
+            print("ra:", ra)
+            print("normal vector:", normal)
+            Vpa = (ref_poly.velocity+ref_poly.ang_vel*ra)
+            Vpb = (inc_poly.velocity+inc_poly.ang_vel*rb)
+            vrel = Vpb - Vpa
+            #both above variables are nominal, therefore the only untested common variable is J...
+            ref_vel[i] = ref_poly.velocity - (J*ref_poly.inv_mass) * normal
+            inc_vel[i] = inc_poly.velocity + (J*inc_poly.inv_mass) * normal
+            print("ra*normal:", ra*normal)
+            ref_ang_vel[i] = ref_poly.ang_vel - (J*(ra*normal.rotate(90)))*ref_poly.inv_inertia
+            inc_ang_vel[i] = inc_poly.ang_vel + (J*(rb*normal.rotate(90)))*inc_poly.inv_inertia
+
+        print("")
+        print("ref_vel:", ref_vel, "compared to:", ref_poly.velocity)
+        print("ref_ang_vel:", ref_ang_vel, "compared to:", ref_poly.ang_vel)
+        fin_ref_vel = ref_vel[0]+ref_vel[1]  #sum doesn't work because items are Vec2
+        fin_inc_vel = inc_vel[0]+inc_vel[1]  #sum doesn't work because items are Vec2
+        fin_ref_ang = sum(ref_ang_vel)
+        fin_inc_ang = sum(inc_ang_vel)
+        print("final velocities:", fin_ref_vel, fin_inc_vel, "/", fin_ref_ang, fin_inc_ang)
+        ref_poly.velocity = fin_ref_vel
+        inc_poly.velocity = fin_inc_vel
+        ref_poly.ang_vel = -fin_ref_ang
+        inc_poly.ang_vel = -fin_inc_ang
+        print("-"*50)
         
     def calc_vertices(self):
         self.abs_vertices.clear()
@@ -336,7 +388,7 @@ class Rigid_Body():
 
     def calc_inertia(self):
         if self.shape == "rectangle":
-            self.inertia = 1/12 * self.mass * (self.height**2 + self.width**2)
+            self.inertia = (1/12) * self.mass * (self.height**2 + self.width**2)
             self.inv_inertia = 1/self.inertia
         elif self.shape == "custom":
             # here will be heavy double integral calculation of moment of inertia
@@ -345,6 +397,8 @@ class Rigid_Body():
             # I = 1/12 * ∑k=0/n−1 (Xk*Yk+1 − Xk+1Yk)(xk+1**2 + Xk+1Xk + Xk**2 + Yk+1**2 + Yk+1Yk + Yk**2)
             # ???
             pass
+        if self.fixed:
+            self.inv_inertia = 0
             
     def draw(self, screen: pygame.Surface, camera):
         screen_vertices = []
@@ -368,10 +422,10 @@ class Rigid_Body():
         if self.collision_manifold[0] != None:
             pos = self.collision_manifold[0]
             col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
-            pygame.draw.circle(screen, 'yellow', col_pos, 5)
+            pygame.draw.circle(screen, 'yellow', col_pos, 3*camera.zoom)
         try:
             if self.collision_manifold[1] != None:
                 pos = self.collision_manifold[1]
                 col_pos = ((pos[0]+camera.pos[0])*camera.zoom, (pos[1]+camera.pos[1])*camera.zoom)
-                pygame.draw.circle(screen, 'yellow', col_pos, 5)
+                pygame.draw.circle(screen, 'yellow', col_pos, 3*camera.zoom)
         except: pass
